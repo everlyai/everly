@@ -9,7 +9,8 @@ import {
   FileText, 
   Plus,
   Phone,
-  Heart
+  Heart,
+  Clock
 } from "lucide-react"
 import type { ElderData, CaregiverData } from "@/app/page"
 
@@ -56,14 +57,14 @@ const mockCalls = [
 
 const mockTopics = [
   { name: "Family", percentage: 82, color: "bg-[var(--sage)]" },
-  { name: "Memories", percentage: 71, color: "bg-[var(--sage-light)]" },
+  { name: "Memories", percentage: 71, color: "bg-(--sage-light)" },
   { name: "Gardening", percentage: 45, color: "bg-[var(--amber)]" },
   { name: "Health", percentage: 28, color: "bg-[var(--coral)]" },
 ]
 
 const mockFamilyMembers = [
   { name: "Emma", relationship: "Granddaughter", initial: "E", color: "bg-[var(--amber)]" },
-  { name: "Jake", relationship: "Grandson", initial: "J", color: "bg-[var(--sage-light)]" },
+  { name: "Jake", relationship: "Grandson", initial: "J", color: "bg-(--sage-light)" },
 ]
 
 export function Dashboard({ elder }: DashboardProps) {
@@ -85,28 +86,33 @@ export function Dashboard({ elder }: DashboardProps) {
   const age = calculateAge(elder.dateOfBirth)
   const fullName = `${elder.firstName} ${elder.lastName}`
   const initials = `${elder.firstName[0] || "D"}${elder.lastName[0] || "W"}`
+  const location = elder.location || "Toronto, ON"
+  const [showMedSchedule, setShowMedSchedule] = useState(false)
+
+  // Calculate meds on track
+  const medsOnTrack = elder.medicationSchedule?.length > 0 ? elder.medicationSchedule.length : 3
 
   return (
-    <div className="min-h-screen bg-[var(--cream)]">
+    <div className="min-h-screen bg-(--cream)">
       <div className="max-w-5xl mx-auto px-4 py-6">
         {/* Header */}
         <header className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-full bg-[var(--amber-light)] flex items-center justify-center text-xl font-semibold text-[var(--amber-dark)]">
+            <div className="w-14 h-14 rounded-full bg-(--amber-light) flex items-center justify-center text-xl font-semibold text-(--amber-dark)">
               {initials}
             </div>
             <div>
               <h1 className="text-xl font-semibold text-foreground">{fullName}</h1>
               <p className="text-sm text-muted-foreground">
-                {age} · Retired schoolteacher · Toronto, ON
+                {age} · {location}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <span className="px-3 py-1 rounded-full bg-[var(--sage-light)] text-[var(--sage)] text-sm font-medium">
+            <span className="px-3 py-1 rounded-full bg-(--sage-light) text-(--sage) text-sm font-medium">
               Active
             </span>
-            <Button variant="outline" className="border-[var(--border)]">
+            <Button variant="outline" className="border-border">
               <Settings className="w-4 h-4 mr-2" />
               Settings
             </Button>
@@ -118,28 +124,95 @@ export function Dashboard({ elder }: DashboardProps) {
           <StatCard value="14" label="Calls this month" />
           <StatCard value="47" label="Stories captured" />
           <StatCard value="86%" label="Happy mood days" />
-          <StatCard value="3" label="Meds on track (days)" />
+          <button
+            onClick={() => setShowMedSchedule(!showMedSchedule)}
+            className="bg-white rounded-xl border border-border p-4 text-left hover:border-(--amber) transition-colors"
+          >
+            <div className="text-2xl font-bold text-foreground">{medsOnTrack}</div>
+            <div className="text-sm text-muted-foreground">Health on track (days)</div>
+          </button>
         </div>
 
-        {/* Alert Banner */}
-        <div className="bg-[var(--warning-bg)] border border-[var(--warning-border)] rounded-xl p-4 mb-6 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-[var(--coral)] flex items-center justify-center">
-              <AlertCircle className="w-4 h-4 text-white" />
+        {/* Medication Schedule Panel */}
+        {showMedSchedule && (
+          <div className="bg-white rounded-xl border border-border p-6 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                Health Schedule
+              </h3>
+              <button
+                onClick={() => setShowMedSchedule(false)}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <span className="sr-only">Close</span>
+                &times;
+              </button>
             </div>
-            <p className="text-sm text-foreground">
-              <span className="font-medium">{elder.firstName}</span> mentioned feeling very alone and referenced Harold several times on Tuesday&apos;s call — it may be worth reaching out today.
+            
+            {elder.medicationSchedule && elder.medicationSchedule.length > 0 ? (
+              <div className="space-y-3">
+                {elder.medicationSchedule.map((med) => (
+                  <div
+                    key={med.id}
+                    className="flex items-center justify-between bg-(--cream) rounded-lg p-4"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-(--amber-light) flex items-center justify-center">
+                        <Clock className="w-5 h-5 text-(--amber-dark)" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-foreground">{med.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {med.time} · {med.days.join(", ")}
+                        </p>
+                      </div>
+                    </div>
+                    <span className="px-3 py-1 rounded-full bg-(--sage-light) text-(--sage) text-xs font-medium">
+                      On track
+                    </span>
+                  </div>
+      
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <div className="w-12 h-12 rounded-full bg-(--cream) flex items-center justify-center mx-auto mb-3">
+                  <Clock className="w-6 h-6 text-muted-foreground" />
+                </div>
+                <p className="text-sm text-muted-foreground mb-2">No health reminders set up yet</p>
+                <p className="text-xs text-muted-foreground">
+                  Health reminders can be added during registration
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Alert — styled as a call log row */}
+        <div className="bg-white rounded-xl border border-[var(--border)] p-4 mb-6 flex items-start gap-3">
+          <div className="w-8 h-8 rounded-full bg-[var(--coral-light)] flex items-center justify-center flex-shrink-0">
+            <AlertCircle className="w-4 h-4 text-[var(--coral)]" />
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-2 text-sm mb-1">
+              <span className="font-medium text-[var(--coral)]">Alert</span>
+              <span className="text-muted-foreground">Tue Mar 11</span>
+              <span className="text-muted-foreground">·</span>
+              <span className="text-muted-foreground">8:47 AM</span>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {elder.firstName} mentioned feeling very alone and referenced Harold several times — our AI flagged a mood dip and notified you automatically.
             </p>
           </div>
-          <Button variant="outline" className="border-[var(--border)] bg-white hover:bg-[var(--cream)]">
-            Send SMS
-          </Button>
+          <span className="flex-shrink-0 px-3 py-1.5 rounded-lg bg-[var(--coral)] text-white text-xs font-medium">
+            Message sent
+          </span>
         </div>
 
         {/* Story of the Week */}
-        <div className="bg-[var(--coral-light)]/40 rounded-xl p-6 mb-6">
+        <div className="bg-(--coral-light)/40 rounded-xl p-6 mb-6">
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-xs font-semibold tracking-wider text-[var(--coral)] uppercase">
+            <span className="text-xs font-semibold tracking-wider text-(--coral) uppercase">
               Story of the Week
             </span>
             <span className="text-xs text-muted-foreground">· March 10, 2026</span>
@@ -156,11 +229,11 @@ export function Dashboard({ elder }: DashboardProps) {
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">Captured over 3 calls this week</span>
             <div className="flex gap-2">
-              <Button variant="outline" className="border-[var(--border)] bg-white hover:bg-[var(--cream)]">
+              <Button variant="outline" className="border-border bg-white hover:bg-(--cream)">
                 <Share2 className="w-4 h-4 mr-2" />
                 Share with family
               </Button>
-              <Button variant="outline" className="border-[var(--border)] bg-white hover:bg-[var(--cream)]">
+              <Button variant="outline" className="border-border bg-white hover:bg-(--cream)">
                 <FileText className="w-4 h-4 mr-2" />
                 Export PDF
               </Button>
@@ -171,12 +244,12 @@ export function Dashboard({ elder }: DashboardProps) {
         {/* Main Content Grid */}
         <div className="grid grid-cols-3 gap-6">
           {/* Recent Calls - Takes 2 columns */}
-          <div className="col-span-2 bg-white rounded-xl border border-[var(--border)] p-6">
+          <div className="col-span-2 bg-white rounded-xl border border-border p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
                 Recent Calls
               </h3>
-              <div className="flex bg-[var(--cream)] rounded-lg p-1">
+              <div className="flex bg-(--cream) rounded-lg p-1">
                 <button
                   onClick={() => setCallFilter("week")}
                   className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
@@ -210,7 +283,7 @@ export function Dashboard({ elder }: DashboardProps) {
           {/* Right Sidebar */}
           <div className="space-y-6">
             {/* Topics This Month */}
-            <div className="bg-white rounded-xl border border-[var(--border)] p-6">
+            <div className="bg-white rounded-xl border border-border p-6">
               <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">
                 Topics This Month
               </h3>
@@ -222,7 +295,7 @@ export function Dashboard({ elder }: DashboardProps) {
             </div>
 
             {/* Family Members */}
-            <div className="bg-white rounded-xl border border-[var(--border)] p-6">
+            <div className="bg-white rounded-xl border border-border p-6">
               <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">
                 Family Members
               </h3>
@@ -230,7 +303,7 @@ export function Dashboard({ elder }: DashboardProps) {
                 {mockFamilyMembers.map((member) => (
                   <FamilyMemberItem key={member.name} member={member} />
                 ))}
-                <button className="w-full py-2 border border-dashed border-[var(--border)] rounded-lg text-sm text-muted-foreground hover:text-foreground hover:border-[var(--amber)] transition-colors flex items-center justify-center gap-2">
+                <button className="w-full py-2 border border-dashed border-border rounded-lg text-sm text-muted-foreground hover:text-foreground hover:border-(--amber) transition-colors flex items-center justify-center gap-2">
                   <Plus className="w-4 h-4" />
                   Add family member
                 </button>
@@ -240,9 +313,9 @@ export function Dashboard({ elder }: DashboardProps) {
         </div>
 
         {/* Footer */}
-        <footer className="mt-8 pt-6 border-t border-[var(--border)] flex items-center justify-between">
+        <footer className="mt-8 pt-6 border-t border-border flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-[var(--amber)] flex items-center justify-center">
+            <div className="w-8 h-8 rounded-full bg-(--amber) flex items-center justify-center">
               <Heart className="w-4 h-4 text-white" />
             </div>
             <span className="text-sm font-medium text-foreground">Gentle Assistance</span>
@@ -261,7 +334,7 @@ export function Dashboard({ elder }: DashboardProps) {
 // Sub-components
 function StatCard({ value, label }: { value: string; label: string }) {
   return (
-    <div className="bg-white rounded-xl border border-[var(--border)] p-4">
+    <div className="bg-white rounded-xl border border-border p-4">
       <div className="text-2xl font-bold text-foreground">{value}</div>
       <div className="text-sm text-muted-foreground">{label}</div>
     </div>
@@ -270,8 +343,8 @@ function StatCard({ value, label }: { value: string; label: string }) {
 
 function CallLogItem({ call }: { call: typeof mockCalls[0] }) {
   const moodEmoji = {
-    happy: { icon: "😊", bg: "bg-[var(--sage-light)]" },
-    neutral: { icon: "😐", bg: "bg-[var(--amber-light)]" },
+    happy: { icon: "😊", bg: "bg-(--sage-light)" },
+    neutral: { icon: "😐", bg: "bg-(--amber-light)" },
     sad: { icon: "😟", bg: "bg-[var(--coral-light)]" },
   }
 
@@ -299,7 +372,7 @@ function TopicBar({ topic }: { topic: typeof mockTopics[0] }) {
   return (
     <div className="flex items-center gap-3">
       <span className="text-sm text-foreground w-20">{topic.name}</span>
-      <div className="flex-1 h-2.5 bg-[var(--cream)] rounded-full overflow-hidden">
+      <div className="flex-1 h-2.5 bg-(--cream) rounded-full overflow-hidden">
         <div
           className={`h-full ${topic.color} rounded-full transition-all`}
           style={{ width: `${topic.percentage}%` }}

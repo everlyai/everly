@@ -4,13 +4,22 @@ import { useState } from "react"
 import { RegistrationFlow } from "@/components/registration-flow"
 import { Dashboard } from "@/components/dashboard"
 
+export type MedicationReminder = {
+  id: string
+  name: string
+  time: string
+  days: string[]
+}
+
 export type ElderData = {
   firstName: string
   lastName: string
   phone: string
   dateOfBirth: string
+  location: string
   relationship: string
   thingsTheyLove: string
+  medicationSchedule: MedicationReminder[]
 }
 
 export type CaregiverData = {

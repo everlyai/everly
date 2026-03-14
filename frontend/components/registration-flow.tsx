@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Check, ArrowRight, ArrowLeft, Phone, Calendar, Heart } from "lucide-react"
+import { Check, ArrowRight, ArrowLeft, Phone, Calendar, Heart, Plus, X, Clock } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import type { ElderData, CaregiverData } from "@/app/page"
+import type { ElderData, CaregiverData, MedicationReminder } from "@/app/page"
 
 interface RegistrationFlowProps {
   onComplete: (elder: ElderData, caregiver: CaregiverData) => void
@@ -41,9 +41,11 @@ export function RegistrationFlow({ onComplete }: RegistrationFlowProps) {
   const [elderLastName, setElderLastName] = useState("")
   const [elderPhone, setElderPhone] = useState("")
   const [elderDOB, setElderDOB] = useState("")
+  const [elderLocation, setElderLocation] = useState("")
   const [relationship, setRelationship] = useState("")
   const [thingsTheyLove, setThingsTheyLove] = useState("")
   const [elderConsent, setElderConsent] = useState(false)
+  const [medicationSchedule, setMedicationSchedule] = useState<MedicationReminder[]>([])
   
   // SMS alerts toggle
   const [smsAlerts, setSmsAlerts] = useState(true)
@@ -67,8 +69,10 @@ export function RegistrationFlow({ onComplete }: RegistrationFlowProps) {
         lastName: elderLastName,
         phone: elderPhone,
         dateOfBirth: elderDOB,
+        location: elderLocation,
         relationship,
         thingsTheyLove,
+        medicationSchedule,
       },
       {
         firstName: caregiverFirstName,
@@ -103,7 +107,7 @@ export function RegistrationFlow({ onComplete }: RegistrationFlowProps) {
                     ? "bg-[var(--amber)] text-white"
                     : step.id === currentStep
                     ? "bg-[var(--amber)] text-white"
-                    : "bg-white border-2 border-[var(--border)] text-muted-foreground"
+                    : "bg-white border-2border-border text-muted-foreground"
                 }`}
               >
                 {step.id < currentStep ? (
@@ -134,7 +138,7 @@ export function RegistrationFlow({ onComplete }: RegistrationFlowProps) {
       </div>
 
       {/* Form Card */}
-      <div className="w-full max-w-xl bg-white rounded-2xl border border-[var(--border)] shadow-sm p-8">
+      <div className="w-full max-w-xl bg-white rounded-2xl borderborder-border shadow-sm p-8">
         {currentStep === 1 && (
           <Step1Caregiver
             firstName={caregiverFirstName}
@@ -163,10 +167,14 @@ export function RegistrationFlow({ onComplete }: RegistrationFlowProps) {
             setPhone={setElderPhone}
             dob={elderDOB}
             setDOB={setElderDOB}
+            location={elderLocation}
+            setLocation={setElderLocation}
             relationship={relationship}
             setRelationship={setRelationship}
             thingsTheyLove={thingsTheyLove}
             setThingsTheyLove={setThingsTheyLove}
+            medicationSchedule={medicationSchedule}
+            setMedicationSchedule={setMedicationSchedule}
             consent={elderConsent}
             setConsent={setElderConsent}
             onNext={handleNext}
@@ -230,7 +238,7 @@ function Step1Caregiver({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-semibold text-foreground mb-2">Create your caregiver account</h2>
+        <h2 className="text-2xl font-semibold text-foreground mb-2">Create your caregiver/family account</h2>
         <p className="text-muted-foreground text-sm">
           You&apos;ll use this to access call summaries, stories, and mood alerts.
         </p>
@@ -243,7 +251,7 @@ function Step1Caregiver({
             placeholder="Sarah"
             value={firstName}
             onChange={(e) => setFirstName(e.target.value)}
-            className="bg-white border-[var(--border)]"
+            className="bg-white border-border"
           />
         </div>
         <div className="space-y-2">
@@ -252,7 +260,7 @@ function Step1Caregiver({
             placeholder="Whitfield"
             value={lastName}
             onChange={(e) => setLastName(e.target.value)}
-            className="bg-white border-[var(--border)]"
+            className="bg-white border-border"
           />
         </div>
       </div>
@@ -264,7 +272,7 @@ function Step1Caregiver({
           placeholder="sarah@example.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="bg-white border-[var(--border)]"
+          className="bg-white border-border"
         />
       </div>
 
@@ -275,7 +283,7 @@ function Step1Caregiver({
           placeholder="+1 (555) 123-4567"
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
-          className="bg-white border-[var(--border)]"
+          className="bg-white border-border"
         />
       </div>
 
@@ -286,7 +294,7 @@ function Step1Caregiver({
           placeholder="Create a password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="bg-white border-[var(--border)]"
+          className="bg-white border-border"
         />
       </div>
 
@@ -325,10 +333,14 @@ function Step2Elder({
   setPhone,
   dob,
   setDOB,
+  location,
+  setLocation,
   relationship,
   setRelationship,
   thingsTheyLove,
   setThingsTheyLove,
+  medicationSchedule,
+  setMedicationSchedule,
   consent,
   setConsent,
   onNext,
@@ -342,15 +354,55 @@ function Step2Elder({
   setPhone: (v: string) => void
   dob: string
   setDOB: (v: string) => void
+  location: string
+  setLocation: (v: string) => void
   relationship: string
   setRelationship: (v: string) => void
   thingsTheyLove: string
   setThingsTheyLove: (v: string) => void
+  medicationSchedule: MedicationReminder[]
+  setMedicationSchedule: (v: MedicationReminder[]) => void
   consent: boolean
   setConsent: (v: boolean) => void
   onNext: () => void
   onBack: () => void
 }) {
+  const [showAddMed, setShowAddMed] = useState(false)
+  const [newMedName, setNewMedName] = useState("")
+  const [newMedTime, setNewMedTime] = useState("08:00")
+  const [newMedDays, setNewMedDays] = useState<string[]>(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"])
+
+  const daysOfWeek = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+
+  const addMedication = () => {
+    if (newMedName.trim()) {
+      setMedicationSchedule([
+        ...medicationSchedule,
+        {
+          id: Date.now().toString(),
+          name: newMedName,
+          time: newMedTime,
+          days: newMedDays,
+        },
+      ])
+      setNewMedName("")
+      setNewMedTime("08:00")
+      setNewMedDays(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"])
+      setShowAddMed(false)
+    }
+  }
+
+  const removeMedication = (id: string) => {
+    setMedicationSchedule(medicationSchedule.filter((m) => m.id !== id))
+  }
+
+  const toggleDay = (day: string) => {
+    if (newMedDays.includes(day)) {
+      setNewMedDays(newMedDays.filter((d) => d !== day))
+    } else {
+      setNewMedDays([...newMedDays, day])
+    }
+  }
   return (
     <div className="space-y-6">
       <div>
@@ -367,7 +419,7 @@ function Step2Elder({
             placeholder="Dorothy"
             value={firstName}
             onChange={(e) => setFirstName(e.target.value)}
-            className="bg-white border-[var(--border)]"
+            className="bg-whiteborder-border"
           />
         </div>
         <div className="space-y-2">
@@ -376,7 +428,7 @@ function Step2Elder({
             placeholder="Whitfield"
             value={lastName}
             onChange={(e) => setLastName(e.target.value)}
-            className="bg-white border-[var(--border)]"
+            className="bg-whiteborder-border"
           />
         </div>
       </div>
@@ -388,7 +440,7 @@ function Step2Elder({
           placeholder="+1 (416) 555-0199"
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
-          className="bg-white border-[var(--border)]"
+          className="bg-whiteborder-border"
         />
       </div>
 
@@ -398,14 +450,24 @@ function Step2Elder({
           type="date"
           value={dob}
           onChange={(e) => setDOB(e.target.value)}
-          className="bg-white border-[var(--border)]"
+          className="bg-whiteborder-border"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-foreground">Location (city, province/state)</label>
+        <Input
+          placeholder="e.g. Toronto, ON"
+          value={location}
+          onChange={(e) => setLocation(e.target.value)}
+          className="bg-whiteborder-border"
         />
       </div>
 
       <div className="space-y-2">
         <label className="text-sm font-medium text-foreground">Your relationship to them</label>
         <Select value={relationship} onValueChange={setRelationship}>
-          <SelectTrigger className="w-full bg-white border-[var(--border)]">
+          <SelectTrigger className="w-full bg-whiteborder-border">
             <SelectValue placeholder="Select relationship" />
           </SelectTrigger>
           <SelectContent>
@@ -427,11 +489,132 @@ function Step2Elder({
           placeholder="e.g. gardening, knitting, old movies..."
           value={thingsTheyLove}
           onChange={(e) => setThingsTheyLove(e.target.value)}
-          className="bg-white border-[var(--border)]"
+          className="bg-whiteborder-border"
         />
       </div>
 
       <div className="h-px bg-[var(--border)]" />
+
+      {/* Medication Schedule Section */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <label className="text-sm font-medium text-foreground">Health Reminders (optional)</label>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Set up daily reminders so Gentle Assistance can check in about health.
+            </p>
+          </div>
+          {!showAddMed && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAddMed(true)}
+              className="border-[var(--border)]"
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              Add
+            </Button>
+          )}
+        </div>
+
+        {/* Add Medication Form */}
+        {showAddMed && (
+          <div className="bg-[var(--cream)] rounded-lg p-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-foreground">New Health Reminder</span>
+              <button
+                onClick={() => setShowAddMed(false)}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground">Health Name</label>
+              <Input
+                placeholder="e.g. Blood pressure pill"
+                value={newMedName}
+                onChange={(e) => setNewMedName(e.target.value)}
+                className="bg-whiteborder-border"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground">Reminder time</label>
+              <Input
+                type="time"
+                value={newMedTime}
+                onChange={(e) => setNewMedTime(e.target.value)}
+                className="bg-whiteborder-border w-32"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground">Days</label>
+              <div className="flex gap-1">
+                {daysOfWeek.map((day) => (
+                  <button
+                    key={day}
+                    type="button"
+                    onClick={() => toggleDay(day)}
+                    className={`w-9 h-9 rounded-full text-xs font-medium transition-colors ${
+                      newMedDays.includes(day)
+                        ? "bg-[var(--amber)] text-white"
+                        : "bg-white borderborder-border text-muted-foreground hover:border-[var(--amber)]"
+                    }`}
+                  >
+                    {day.slice(0, 2)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <Button
+              type="button"
+              onClick={addMedication}
+              disabled={!newMedName.trim()}
+              className="w-full bg-foreground text-white hover:bg-foreground/90"
+            >
+              Add Reminder
+            </Button>
+          </div>
+        )}
+
+        {/* List of Added Medications */}
+        {medicationSchedule.length > 0 && (
+          <div className="space-y-2">
+            {medicationSchedule.map((med) => (
+              <div
+                key={med.id}
+                className="flex items-center justify-between bg-white border
+                 rounded-lg p-3"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-[var(--amber-light)] flex items-center justify-center">
+                    <Clock className="w-4 h-4 text-[var(--amber-dark)]" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{med.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {med.time} · {med.days.join(", ")}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => removeMedication(med.id)}
+                  className="text-muted-foreground hover:text-red-500 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="h-px bg--border" />
 
       <div className="bg-[var(--consent-bg)] rounded-lg p-4 flex items-start gap-3">
         <Checkbox
