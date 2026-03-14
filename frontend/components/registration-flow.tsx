@@ -91,7 +91,7 @@ export function RegistrationFlow({ onComplete }: RegistrationFlowProps) {
           <div className="w-10 h-10 rounded-full bg-(--amber) flex items-center justify-center">
             <Heart className="w-5 h-5 text-white" />
           </div>
-          <span className="text-xl font-semibold text-foreground">Gentle Assistance</span>
+          <span className="text-xl font-semibold text-foreground">Everly</span>
         </div>
         <p className="text-muted-foreground text-sm">A living memoir. A safer home.</p>
       </div>
@@ -408,7 +408,7 @@ function Step2Elder({
       <div>
         <h2 className="text-2xl font-semibold text-foreground mb-2">Add your elder&apos;s details</h2>
         <p className="text-muted-foreground text-sm">
-          Gentle Assistance will call them at this number. No app or smartphone needed — just a regular phone call.
+          Everly will call them at this number. No app or smartphone needed. Just a regular phone call.
         </p>
       </div>
 
@@ -501,7 +501,7 @@ function Step2Elder({
           <div>
             <label className="text-sm font-medium text-foreground">Health Reminders (optional)</label>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Set up daily reminders so Gentle Assistance can check in about health.
+              Set up daily reminders so Everly can check in about health.
             </p>
           </div>
           {!showAddMed && (
@@ -623,7 +623,7 @@ function Step2Elder({
           className="mt-0.5 data-[state=checked]:bg-(--amber) data-[state=checked]:border-(--amber)"
         />
         <label className="text-sm text-foreground leading-relaxed">
-          I confirm that {firstName || "they"} {firstName ? "has" : "have"} verbally consented to receiving AI-assisted phone calls through Gentle Assistance and having call summaries shared with me.
+          I confirm that {firstName || "they"} {firstName ? "has" : "have"} verbally consented to receiving AI-assisted phone calls through Everly and having call summaries shared with me.
         </label>
       </div>
 
@@ -711,7 +711,7 @@ function Step3Confirm({
             <div>
               <p className="text-sm font-medium text-foreground">First call in 10 minutes</p>
               <p className="text-xs text-muted-foreground">
-                Gentle Assistance will call {elderName.split(" ")[0]} at {elderPhone || "their number"} for a friendly introduction.
+                Everly will call {elderName.split(" ")[0]} at {elderPhone || "their number"} for a friendly introduction.
               </p>
             </div>
           </div>

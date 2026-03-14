@@ -312,7 +312,7 @@ export function Dashboard({ elder }: DashboardProps) {
             <div className="w-8 h-8 rounded-full bg-(--amber) flex items-center justify-center">
               <Heart className="w-4 h-4 text-white" />
             </div>
-            <span className="text-sm font-medium text-foreground">Gentle Assistance</span>
+            <span className="text-sm font-medium text-foreground">Everly</span>
           </div>
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <a href="#" className="hover:text-foreground transition-colors">Help</a>
