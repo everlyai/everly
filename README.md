@@ -10,11 +10,28 @@ Built for the **GenAI Genesis Hackathon** (Next.js, Supabase, VAPI, Anthropic/Cl
 
 ## Which number does VAPI call?
 
-- **In-browser (current demo):** When you click **Start call** on the dashboard or elders list, the call runs **in your browser** (mic + speakers). **No phone number is called.** You’re talking to the AI directly on your device. The elder’s `phone` in the database is **not** used in this flow.
-- **Outbound phone calls (optional):** The backend has an API route `POST /api/call` that uses VAPI’s **phone** product. If you trigger that (e.g. a future “Call their phone” button), then:
+- **In-browser (current demo):** When you click **Start call** on the dashboard or elders list, the call runs **in your browser** (mic + speakers). **No phone number is called.** You’re talking to the AI directly on your device. The elder’s `phone` in the database is **not** used. If you see a call in the VAPI dashboard with ~30 seconds, that is this **web call** (browser session), not an outbound call to any number.
+- **Outbound phone calls (optional):** The backend has an API route `POST /api/call` that uses VAPI’s **phone** product. Only if you trigger that (e.g. `curl -X POST .../api/call -d '{"elderId":"..."}'` or a “Call their phone” button), then:
   - **VAPI calls the elder’s phone number** (`elder.phone` from Supabase).
   - The call is placed **from** the VAPI phone number linked to `VAPI_PHONE_NUMBER_ID` **to** the elder’s number.
-  So for real phone calls, the number that gets called is the **elder’s** number stored in the database.
+  So for real phone calls, the number that gets called is the **elder’s** number stored in the database. In the VAPI dashboard, an outbound phone call will show a destination number; a web call will not.
+
+---
+
+## Debugging: “Call starts but nothing happens”
+
+If you click **Start call** and the VAPI dashboard shows time passing but you hear/see nothing in the browser:
+
+1. **No number is called** — This is a web call. The 30 seconds in VAPI is the browser session, not an outbound call to a phone number.
+2. **Open the browser console** (F12 → Console). You should see `[VAPI] call-start` when the call actually starts. If you never see it, the SDK may still be connecting.
+3. **Check audio:**
+   - Allow microphone when the browser prompts.
+   - Ensure the tab is not muted (no mute icon on the tab).
+   - Try headphones or a different speaker in case output is going to another device.
+4. **Check the assistant in VAPI Dashboard:**
+   - Assistant has a **first message** (e.g. “Hello {{elder_name}}! How are you today?”) so the AI speaks first.
+   - **Voice** is set (e.g. ElevenLabs) and the voice ID is valid.
+5. **VAPI Dashboard → Calls:** Open the call that shows ~30s. Check if it’s **Web** or **Phone**. For Web, there is no “number called”; for Phone, the destination number is the elder’s `phone` from your database.
 
 ---
 
