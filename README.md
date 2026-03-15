@@ -122,7 +122,7 @@ genesis-genai/
 
 ## 30-second pitch
 
-*“EchoElders helps families care for aging loved ones through AI phone conversations. Caregivers set up a profile with medications, routines, and life stories. Our AI calls the elder at scheduled times — reminding about medications, providing companionship, and capturing memories. After each call, caregivers get a summary: mood, medication adherence, and any concerns. Over time we build a living memory archive. We’re not just reducing loneliness; we’re preserving a person before time erases the details.”*
+*“Everly helps families care for aging loved ones through AI phone conversations. Caregivers set up a profile with medications, routines, and life stories. Our AI calls the elder at scheduled times — reminding about medications, providing companionship, and capturing memories. After each call, caregivers get a summary: mood, medication adherence, and any concerns. Over time we build a living memory archive. We’re not just reducing loneliness; we’re preserving a person before time erases the details.”*
 
 ---
 
