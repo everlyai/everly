@@ -1,10 +1,27 @@
-# Everly
+# 🧚‍♀️ Everly
 
-**AI companion calls for aging loved ones — companionship, medication reminders, and memory capture.**
+**A Living Memoir. A Safer Home.**
 
-Everly helps families care for seniors through scheduled AI phone conversations. Caregivers set up a profile (medications, routines, life stories). The AI calls the elder — or you start an **in-browser demo call** from the dashboard — to provide companionship, gentle medication reminders, and to capture memories. After each call, caregivers get a summary: mood, medication adherence, and any concerns.
+AI companion for seniors that captures life stories and keeps families connected through regular voice calls, mood insights, and beautiful weekly story excerpts.
 
-Built for the **GenAI Genesis Hackathon** (Next.js, Supabase, VAPI, Anthropic/Claude, ElevenLabs).
+[![Demo](https://img.shields.io/badge/🎥%20Watch%20Demo-View%20Now-blue)](your-demo-link-here)
+[![Live](https://img.shields.io/badge/🚀%20Live%20Site-Visit-green)](your-live-url-here)
+
+> **Everly helps families care for aging loved ones through AI phone conversations.**
+> 
+> Caregivers set up a profile with medications, routines, and life stories. Our AI calls the elder at scheduled times — reminding about medications, providing companionship, and capturing memories. After each call, caregivers get a summary: mood, medication adherence, and any concerns. Over time we build a living memory archive.
+
+---
+
+## 📋 Hackathon Submission
+
+**For detailed submission information, see [SUBMISSION.md](./SUBMISSION.md)**
+
+- 🏆 **Built for:** GenAI Genesis Hackathon
+- 🤖 **Technologies:** Next.js, TypeScript, Supabase, VAPI (Voice AI), Tailwind CSS
+- ⏱️ **Time to MVP:** 24 hours
+
+---
 
 ---
 
@@ -316,9 +333,17 @@ Your friends can't access `localhost:3001` on your computer. To share Everly wit
 
 ---
 
-## 30-second pitch
+## 🎯 30-Second Pitch
 
-*"Everly helps families care for aging loved ones through AI phone conversations. Caregivers set up a profile with medications, routines, and life stories. Our AI calls the elder at scheduled times — reminding about medications, providing companionship, and capturing memories. After each call, caregivers get a summary: mood, medication adherence, and any concerns. Over time we build a living memory archive. We're not just reducing loneliness; we're preserving a person before time erases the details."*
+> *"Everly helps families care for aging loved ones through AI phone conversations. Caregivers set up a profile with medications, routines, and life stories. Our AI calls the elder at scheduled times — reminding about medications, providing companionship, and capturing memories. After each call, caregivers get a summary: mood, medication adherence, and any concerns. Over time we build a living memory archive. We're not just reducing loneliness; we're preserving a person before time erases the details."*
+
+---
+
+## 🏅 Awards & Recognition
+
+*Add any hackathon awards or recognition here*
+
+---
 
 ---
 

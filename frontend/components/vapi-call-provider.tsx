@@ -149,54 +149,77 @@ export function VapiCallProvider({ children }: { children: ReactNode }) {
     console.log("[Vapi] 📦 Final data to save:", safeData)
     
     // Save to Supabase
+    console.log("[Vapi] 💾 Attempting to save to Supabase...")
+    console.log("[Vapi] Elder ID for save:", elderIdRef.current)
+    
     try {
+      const insertData = {
+        vapi_call_id: callId,
+        elder_id: elderIdRef.current || 'dorothy',
+        started_at: new Date().toISOString(),
+        ended_at: new Date().toISOString(),
+        duration_seconds: 120,
+        transcript: "Conversation completed successfully.",
+        summary: safeData.mood_notes,
+        mood_score: safeData.mood === 'happy' ? 5 : safeData.mood === 'sad' ? 2 : 3,
+        medication_confirmed: safeData.meds_taken,
+        concern_flags: safeData.concern_flags,
+        memories_extracted: safeData.has_story ? [{ 
+          title: safeData.chapter_title, 
+          text: safeData.chapter_content 
+        }] : []
+      }
+      console.log("[Vapi] Insert data:", insertData)
+      
       const { data: inserted, error: dbError } = await supabase
         .from('call_logs')
-        .insert({
-          vapi_call_id: callId,
-          elder_id: elderIdRef.current || 'dorothy',
-          started_at: new Date().toISOString(),
-          ended_at: new Date().toISOString(),
-          duration_seconds: 120, // 2 min default
-          transcript: "Conversation completed successfully.",
-          summary: safeData.mood_notes,
-          mood_score: safeData.mood === 'happy' ? 5 : safeData.mood === 'sad' ? 2 : 3,
-          medication_confirmed: safeData.meds_taken,
-          concern_flags: safeData.concern_flags,
-          memories_extracted: safeData.has_story ? [{ 
-            title: safeData.chapter_title, 
-            text: safeData.chapter_content 
-          }] : []
-        })
+        .insert(insertData)
         .select()
         .single()
       
       if (dbError) {
         console.error("[Vapi] ❌ Database error:", dbError)
-      } else {
-        console.log("[Vapi] ✅ Successfully saved to database:", inserted)
+        console.error("[Vapi] Error details:", JSON.stringify(dbError, null, 2))
+      } else if (inserted) {
+        console.log("[Vapi] ✅ Successfully saved call_log:", inserted)
         setLastCallData({ ...safeData, id: inserted.id, savedAt: new Date().toISOString() })
+      } else {
+        console.warn("[Vapi] ⚠️ No error but no data returned from insert")
       }
       
       // Also save memory if there's a story
-      // Use the inserted call_log.id (not vapi_call_id) for the foreign key
+      console.log("[Vapi] 💭 Checking if memory should be saved...", { 
+        has_story: safeData.has_story, 
+        has_content: !!safeData.chapter_content, 
+        inserted_id: inserted?.id 
+      })
+      
       if (safeData.has_story && safeData.chapter_content && inserted?.id) {
-        const { error: memoryError } = await supabase
+        console.log("[Vapi] 💾 Saving memory to database...")
+        const memoryData = {
+          elder_id: elderIdRef.current || 'dorothy',
+          call_id: inserted.id,
+          memory_text: safeData.chapter_content,
+          category: safeData.chapter_title,
+          date_mentioned: new Date().toISOString().slice(0, 10),
+          sentiment: safeData.mood
+        }
+        console.log("[Vapi] Memory data:", memoryData)
+        
+        const { data: memoryInserted, error: memoryError } = await supabase
           .from('memories')
-          .insert({
-            elder_id: elderIdRef.current || 'dorothy',
-            call_id: inserted.id, // Use the call_logs.id, not vapi_call_id
-            memory_text: safeData.chapter_content,
-            category: safeData.chapter_title,
-            date_mentioned: new Date().toISOString().slice(0, 10),
-            sentiment: safeData.mood
-          })
+          .insert(memoryData)
+          .select()
+          .single()
         
         if (memoryError) {
           console.error("[Vapi] ❌ Memory save error:", memoryError)
+          console.error("[Vapi] Memory error details:", JSON.stringify(memoryError, null, 2))
         } else {
-          console.log("[Vapi] ✅ Memory saved successfully")
+          console.log("[Vapi] ✅ Memory saved successfully:", memoryInserted)
         }
+      } else {
+        console.log("[Vapi] ⏭️ Skipping memory save - conditions not met")
       }
     } catch (err) {
       console.error("[Vapi] ❌ Failed to save:", err)
@@ -204,6 +227,11 @@ export function VapiCallProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
+    console.log("[Vapi] 🔧 Initializing VapiCallProvider...")
+    console.log("[Vapi] NEXT_PUBLIC_VAPI_PUBLIC_KEY exists:", !!process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY)
+    console.log("[Vapi] NEXT_PUBLIC_SUPABASE_URL exists:", !!process.env.NEXT_PUBLIC_SUPABASE_URL)
+    console.log("[Vapi] VAPI_API_KEY exists:", !!VAPI_API_KEY)
+    
     if (!VAPI_PUBLIC_KEY) {
       console.error("[Vapi] ❌ No public key found!")
       return

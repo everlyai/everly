@@ -246,7 +246,8 @@ export function ElderDashboardView({ elder, calls, memories, onBack, onRefresh }
     : FALLBACK.happyMoodDays
   const displayHealthOnTrack = healthOnTrackYes ? "Yes" : FALLBACK.healthOnTrack
   const displayCallsList = displayCalls.length > 0 ? displayCalls : [...FALLBACK.recentCalls]
-  const displayMeds = meds.length > 0 ? meds : [...FALLBACK.healthSchedule]
+  // Always show fallback health schedule (static values)
+  const displayMeds = [...FALLBACK.healthSchedule]
   const displayTopics = topicsThisMonth.length > 0 ? topicsThisMonth : [...FALLBACK.topics]
 
   const alertLabel = latestAlert
@@ -284,6 +285,11 @@ export function ElderDashboardView({ elder, calls, memories, onBack, onRefresh }
             Test call
           </Button>
         </div>
+
+        {/* Dark overlay when call is active */}
+        {isActive ? (
+          <div className="fixed inset-0 bg-black/60 z-40 pointer-events-none" />
+        ) : null}
 
         {/* Test call dialog */}
         <Dialog open={testCallOpen} onOpenChange={setTestCallOpen}>
@@ -377,12 +383,12 @@ export function ElderDashboardView({ elder, calls, memories, onBack, onRefresh }
                   <span className="sage-pill bg-chart-1/20 text-chart-1 border border-chart-1/30 text-xs uppercase font-mono">Active</span>
                   <Button
                     size="sm"
-                    className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                    className="bg-primary text-primary-foreground"
                     onClick={startPhoneCall}
                     disabled={phoneCallLoading || isActive}
                   >
                     {phoneCallLoading ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <Phone className="w-4 h-4 mr-1.5" />}
-                    {phoneCallLoading ? "Calling…" : "Call phone"}
+                    Schedule Call
                   </Button>
                   {onBack && (
                     <Button variant="ghost" size="icon" onClick={onBack}>
