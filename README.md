@@ -2,7 +2,7 @@
 
 **AI companion calls for aging loved ones — companionship, medication reminders, and memory capture.**
 
-EchoElders helps families care for seniors through scheduled AI phone conversations. Caregivers set up a profile (medications, routines, life stories). The AI calls the elder — or you start an **in-browser demo call** from the dashboard — to provide companionship, gentle medication reminders, and to capture memories. After each call, caregivers get a summary: mood, medication adherence, and any concerns.
+Everly helps families care for seniors through scheduled AI phone conversations. Caregivers set up a profile (medications, routines, life stories). The AI calls the elder — or you start an **in-browser demo call** from the dashboard — to provide companionship, gentle medication reminders, and to capture memories. After each call, caregivers get a summary: mood, medication adherence, and any concerns.
 
 Built for the **GenAI Genesis Hackathon** (Next.js, Supabase, VAPI, Anthropic/Claude, ElevenLabs).
 
