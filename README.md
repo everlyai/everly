@@ -4,7 +4,15 @@
 
 Everly helps families care for seniors through scheduled AI phone conversations. Caregivers set up a profile (medications, routines, life stories). The AI calls the elder — or you start an **in-browser demo call** from the dashboard — to provide companionship, gentle medication reminders, and to capture memories. After each call, caregivers get a summary: mood, medication adherence, and any concerns.
 
-Built for the **GenAI Genesis Hackathon** (Next.js, Supabase, VAPI, Anthropic/Claude, ElevenLabs).
+---
+
+## The problem
+
+1 in 4 seniors experience chronic loneliness. 70% of family histories are never recorded.
+Most families live too far away to call every day — and even when they do, the conversations
+stay in their heads and disappear.
+
+Everly fixes both.
 
 ---
 
