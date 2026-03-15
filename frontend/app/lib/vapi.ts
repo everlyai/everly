@@ -3,7 +3,17 @@ import type { Elder } from "@/app/types"
 const VAPI_API_KEY = process.env.VAPI_API_KEY!
 const VAPI_BASE_URL = "https://api.vapi.ai"
 
+/** Normalize to E.164 for VAPI (e.g. US 10-digit → +1xxxxxxxxxx). */
+export function toE164(phone: string): string {
+  const digits = phone.replace(/\D/g, "")
+  if (digits.length === 10) return `+1${digits}`
+  if (digits.length === 11 && digits.startsWith("1")) return `+${digits}`
+  if (phone.startsWith("+")) return phone
+  return `+${digits}`
+}
+
 export async function initiateCall(elder: Elder): Promise<{ callId: string }> {
+  const number = toE164(elder.phone)
   const response = await fetch(`${VAPI_BASE_URL}/call`, {
     method: "POST",
     headers: {
@@ -14,7 +24,7 @@ export async function initiateCall(elder: Elder): Promise<{ callId: string }> {
       assistantId: process.env.VAPI_ASSISTANT_ID,
       phoneNumberId: process.env.VAPI_PHONE_NUMBER_ID,
       customer: {
-        number: elder.phone,
+        number,
         name: elder.name,
       },
       assistantOverrides: {
@@ -51,6 +61,7 @@ export async function initiateOutboundCall(
   }
   const name = options?.name?.trim() || "Guest"
   const variableValues = options?.variableValues ?? {}
+  const number = toE164(phoneNumber.trim())
   const response = await fetch(`${VAPI_BASE_URL}/call`, {
     method: "POST",
     headers: {
@@ -61,7 +72,7 @@ export async function initiateOutboundCall(
       assistantId: process.env.VAPI_ASSISTANT_ID,
       phoneNumberId,
       customer: {
-        number: phoneNumber.trim(),
+        number,
         name,
       },
       assistantOverrides: {

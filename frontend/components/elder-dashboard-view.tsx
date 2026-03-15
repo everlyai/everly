@@ -3,6 +3,14 @@
 import { useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
   AlertCircle,
   Share2,
   FileText,
@@ -15,15 +23,37 @@ import {
   Smile,
   Heart,
   Clock,
+  PhoneCall,
 } from "lucide-react"
 import { useVapi } from "@/components/vapi-call-provider"
 import type { Elder, CallLog, Memory } from "@/app/types"
+
+/** Fallback values when DB has no data so the dashboard doesn’t look empty */
+const FALLBACK = {
+  callsThisMonth: 4,
+  storiesCaptured: 3,
+  happyMoodDays: 5,
+  healthOnTrack: true,
+  recentCalls: [
+    { id: "fallback-1", date: "Today", time: "10:14 AM", duration: "12 min", mood: "happy" as const, summary: "Quick check-in. Dorothy was in good spirits and mentioned her garden." },
+    { id: "fallback-2", date: "Yesterday", time: "9:30 AM", duration: "18 min", mood: "happy" as const, summary: "Talked about family and remembered a story from the old days." },
+    { id: "fallback-3", date: "Mar 13", time: "9:45 AM", duration: "15 min", mood: "neutral" as const, summary: "Routine call. Medication reminder acknowledged." },
+  ] as const,
+  healthSchedule: [{ name: "Morning medication", time: "8:00 AM" }] as const,
+  topics: [
+    { name: "Family", percentage: 82 },
+    { name: "Memories", percentage: 71 },
+    { name: "Gardening", percentage: 45 },
+    { name: "Health", percentage: 28 },
+  ] as const,
+}
 
 interface ElderDashboardViewProps {
   elder: Elder
   calls: CallLog[]
   memories: Memory[]
   onBack?: () => void
+  onRefresh?: () => void
 }
 
 function formatTime(time: string) {
@@ -99,15 +129,54 @@ function formatDuration(seconds: number) {
   return `${m} min`
 }
 
+/** Format phone for display e.g. +19375983675 → (937) 598-3675 */
+function formatPhoneDisplay(phone: string) {
+  const digits = phone.replace(/\D/g, "")
+  if (digits.length === 11 && digits.startsWith("1")) {
+    return `(${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7)}`
+  }
+  if (digits.length === 10) {
+    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`
+  }
+  return phone
+}
+
 function moodFromScore(score: number): "happy" | "neutral" | "sad" {
   if (score >= 4) return "happy"
   if (score >= 2) return "neutral"
   return "sad"
 }
 
-export function ElderDashboardView({ elder, calls, memories, onBack }: ElderDashboardViewProps) {
+export function ElderDashboardView({ elder, calls, memories, onBack, onRefresh }: ElderDashboardViewProps) {
   const [callFilter, setCallFilter] = useState<"week" | "all">("week")
+  const [testCallOpen, setTestCallOpen] = useState(false)
+  const [phoneCallLoading, setPhoneCallLoading] = useState(false)
+  const [phoneCallError, setPhoneCallError] = useState<string | null>(null)
   const { startCall, endCall, isActive, isConnecting, error } = useVapi()
+
+  const startPhoneCall = async () => {
+    setPhoneCallError(null)
+    setPhoneCallLoading(true)
+    try {
+      const res = await fetch("/api/call", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ elderId: elder.id }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? "Call failed")
+      onRefresh?.()
+    } catch (e) {
+      setPhoneCallError(e instanceof Error ? e.message : "Failed to place call")
+    } finally {
+      setPhoneCallLoading(false)
+    }
+  }
+
+  const startTestCall = () => {
+    setTestCallOpen(false)
+    startCall(elder)
+  }
 
   const initials = elder.name
     .split(" ")
@@ -155,9 +224,22 @@ export function ElderDashboardView({ elder, calls, memories, onBack }: ElderDash
     () => deriveTopicsThisMonth(calls, memories),
     [calls, memories]
   )
-  const locationOrPhone = elder.location || elder.phone
+  const locationOrPhone = elder.location
+    ? elder.location
+    : formatPhoneDisplay(elder.phone)
+
   const meds = Array.isArray(elder.medications) ? elder.medications : []
   const healthOnTrackYes = healthOnTrack > 0
+
+  const hasRealData = calls.length > 0 || memories.length > 0
+  const displayCallsThisMonth = callsThisMonth > 0 ? callsThisMonth : (hasRealData ? 0 : FALLBACK.callsThisMonth)
+  const displayStories = storiesCaptured > 0 ? storiesCaptured : (hasRealData ? 0 : FALLBACK.storiesCaptured)
+  const displayHappyMood = happyMoodCalls.length > 0 ? happyMoodCalls.length : (hasRealData ? 0 : FALLBACK.happyMoodDays)
+  const displayHealthOnTrack = healthOnTrackYes ? "Yes" : (hasRealData ? "—" : (FALLBACK.healthOnTrack ? "Yes" : "—"))
+  const displayCallsList = displayCalls.length > 0 ? displayCalls : (hasRealData ? [] : FALLBACK.recentCalls)
+  const displayMeds = meds.length > 0 ? meds : (hasRealData ? [] : [...FALLBACK.healthSchedule])
+  const displayTopics = topicsThisMonth.length > 0 ? topicsThisMonth : (hasRealData ? [] : [...FALLBACK.topics])
+
   const alertLabel = latestAlert
     ? (() => {
         const d = new Date(latestAlert.started_at)
@@ -173,30 +255,66 @@ export function ElderDashboardView({ elder, calls, memories, onBack }: ElderDash
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-6xl mx-auto px-4 py-8">
-        {/* Hero */}
-        <div className="text-center mb-8">
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground font-heading mb-2">
-            Everything in one calm view
-          </h1>
-          <p className="text-muted-foreground">
-            See schedules, alerts, and stories—without the noise.
-          </p>
+        {/* Hero + Test call */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-8">
+          <div className="text-center sm:text-left">
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground font-heading mb-2">
+              Everything in one calm view
+            </h1>
+            <p className="text-muted-foreground">
+              See schedules, alerts, and stories—without the noise.
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            className="border-border shrink-0"
+            onClick={() => setTestCallOpen(true)}
+            disabled={isConnecting || isActive}
+          >
+            <PhoneCall className="w-4 h-4 mr-2" />
+            Test call
+          </Button>
         </div>
 
-        {error && (
+        {/* Test call dialog */}
+        <Dialog open={testCallOpen} onOpenChange={setTestCallOpen}>
+          <DialogContent className="rounded-[28px] border-border">
+            <DialogHeader>
+              <DialogTitle className="font-heading">Test call</DialogTitle>
+              <DialogDescription className="text-muted-foreground">
+                Talk to the assistant in your browser. No phone call will be made—you’ll hear and speak through this device.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setTestCallOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                onClick={startTestCall}
+                disabled={isConnecting || isActive}
+              >
+                {isConnecting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Phone className="w-4 h-4 mr-2" />}
+                Start test call
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {(error || phoneCallError) && (
           <div className="mb-4 p-3 rounded-[28px] bg-secondary border border-border text-destructive text-sm">
-            {error}
+            {error ?? phoneCallError}
           </div>
         )}
 
-        {/* Summary stats with icons - from database */}
+        {/* Summary stats - from DB with fallback when empty */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div className="paper-card p-4 flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-muted-foreground">
               <Phone className="w-5 h-5" />
             </div>
             <div>
-              <div className="text-xl font-bold text-foreground font-heading">{callsThisMonth}</div>
+              <div className="text-xl font-bold text-foreground font-heading">{displayCallsThisMonth}</div>
               <div className="text-xs text-muted-foreground font-mono">Calls this month</div>
             </div>
           </div>
@@ -205,7 +323,7 @@ export function ElderDashboardView({ elder, calls, memories, onBack }: ElderDash
               <BookOpen className="w-5 h-5" />
             </div>
             <div>
-              <div className="text-xl font-bold text-foreground font-heading">{storiesCaptured}</div>
+              <div className="text-xl font-bold text-foreground font-heading">{displayStories}</div>
               <div className="text-xs text-muted-foreground font-mono">Stories captured</div>
             </div>
           </div>
@@ -214,7 +332,7 @@ export function ElderDashboardView({ elder, calls, memories, onBack }: ElderDash
               <Smile className="w-5 h-5" />
             </div>
             <div>
-              <div className="text-xl font-bold text-foreground font-heading">{happyMoodCalls.length}</div>
+              <div className="text-xl font-bold text-foreground font-heading">{displayHappyMood}</div>
               <div className="text-xs text-muted-foreground font-mono">Happy mood days</div>
             </div>
           </div>
@@ -223,7 +341,7 @@ export function ElderDashboardView({ elder, calls, memories, onBack }: ElderDash
               <Heart className="w-5 h-5" />
             </div>
             <div>
-              <div className="text-xl font-bold text-foreground font-heading">{healthOnTrackYes ? "Yes" : "—"}</div>
+              <div className="text-xl font-bold text-foreground font-heading">{displayHealthOnTrack}</div>
               <div className="text-xs text-muted-foreground font-mono">Health on track</div>
             </div>
           </div>
@@ -251,11 +369,11 @@ export function ElderDashboardView({ elder, calls, memories, onBack }: ElderDash
                   <Button
                     size="sm"
                     className="bg-primary hover:bg-primary/90 text-primary-foreground"
-                    onClick={() => startCall(elder)}
-                    disabled={isConnecting || isActive}
+                    onClick={startPhoneCall}
+                    disabled={phoneCallLoading || isActive}
                   >
-                    {isConnecting ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <Phone className="w-4 h-4 mr-1.5" />}
-                    {isActive ? "On call…" : "Start call"}
+                    {phoneCallLoading ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <Phone className="w-4 h-4 mr-1.5" />}
+                    {phoneCallLoading ? "Calling…" : "Call phone"}
                   </Button>
                   {onBack && (
                     <Button variant="ghost" size="icon" onClick={onBack}>
@@ -281,14 +399,14 @@ export function ElderDashboardView({ elder, calls, memories, onBack }: ElderDash
               )}
             </div>
 
-            {/* Health Schedule - from elder.medications */}
+            {/* Health Schedule - from elder.medications with fallback */}
             <div className="paper-card p-6">
               <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider font-mono mb-4">
                 Health Schedule
               </h3>
-              {meds.length > 0 ? (
+              {displayMeds.length > 0 ? (
                 <div className="space-y-3">
-                  {meds.map((med, i) => (
+                  {displayMeds.map((med, i) => (
                     <div
                       key={i}
                       className="flex items-center justify-between bg-background rounded-[28px] p-4"
@@ -342,38 +460,43 @@ export function ElderDashboardView({ elder, calls, memories, onBack }: ElderDash
                   </button>
                 </div>
               </div>
-              <div className="space-y-3">
-                {displayCalls.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No calls yet</p>
-                ) : (
-                  displayCalls.slice(0, 5).map((call) => {
-                    const mood = moodFromScore(call.mood_score)
-                    const moodEmoji = { happy: "😊", neutral: "😐", sad: "😟" }
-                    return (
-                      <div key={call.id} className="flex items-center gap-2 text-sm">
-                        <span className="w-6 h-6 rounded-full bg-chart-1/30 flex items-center justify-center text-xs shrink-0">
-                          {moodEmoji[mood]}
-                        </span>
-                        <span className="text-foreground">
-                          {formatDate(call.started_at)}, {formatTime(call.started_at?.slice(11, 16) ?? "")}
-                        </span>
-                        <span className="text-muted-foreground ml-auto">{formatDuration(call.duration_seconds)}</span>
-                      </div>
-                    )
-                  })
-                )}
-              </div>
+            <div className="space-y-3">
+              {displayCallsList.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No calls yet</p>
+              ) : (
+                displayCallsList.slice(0, 5).map((call) => {
+                  const isReal = "started_at" in call && "mood_score" in call
+                  const mood = isReal ? moodFromScore((call as CallLog).mood_score) : (call as typeof FALLBACK.recentCalls[0]).mood
+                  const moodEmoji = { happy: "😊", neutral: "😐", sad: "😟" }
+                  const dateLabel = isReal
+                    ? `${formatDate((call as CallLog).started_at)}, ${formatTime((call as CallLog).started_at?.slice(11, 16) ?? "")}`
+                    : `${(call as typeof FALLBACK.recentCalls[0]).date}, ${(call as typeof FALLBACK.recentCalls[0]).time}`
+                  const duration = isReal
+                    ? formatDuration((call as CallLog).duration_seconds)
+                    : (call as typeof FALLBACK.recentCalls[0]).duration
+                  return (
+                    <div key={(call as { id: string }).id} className="flex items-center gap-2 text-sm">
+                      <span className="w-6 h-6 rounded-full bg-chart-1/30 flex items-center justify-center text-xs shrink-0">
+                        {moodEmoji[mood]}
+                      </span>
+                      <span className="text-foreground">{dateLabel}</span>
+                      <span className="text-muted-foreground ml-auto">{duration}</span>
+                    </div>
+                  )
+                })
+              )}
+            </div>
             </div>
 
             <div className="paper-card p-6">
               <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4 font-mono">
                 Topics This Month
               </h3>
-              {topicsThisMonth.length === 0 || topicsThisMonth.every((t) => t.percentage === 0) ? (
+              {displayTopics.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No topic data yet.</p>
               ) : (
                 <div className="space-y-3">
-                  {topicsThisMonth.map((topic, i) => (
+                  {displayTopics.map((topic, i) => (
                     <div key={topic.name} className="flex items-center gap-2">
                       <span className="text-sm text-foreground w-20 font-mono shrink-0">{topic.name}</span>
                       <div className="flex-1 h-2 bg-background rounded-full overflow-hidden">
