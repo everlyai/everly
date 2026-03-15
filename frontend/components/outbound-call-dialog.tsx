@@ -78,10 +78,10 @@ export function OutboundCallDialog({
           {triggerLabel}
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="rounded-[28px] border-border">
         <DialogHeader>
-          <DialogTitle>Outbound call</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="font-heading">Outbound call</DialogTitle>
+          <DialogDescription className="font-mono text-muted-foreground">
             VAPI will call this number from your configured phone number. Use E.164 format (e.g. +15551234567).
           </DialogDescription>
         </DialogHeader>
@@ -134,7 +134,7 @@ export function OutboundCallDialog({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-[28px]">
               {loading ? "Calling…" : "Call number"}
             </Button>
           </DialogFooter>

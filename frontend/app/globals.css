@@ -3,55 +3,56 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Kimi design system: warm cream background, sage paper accents, amber primary */
 :root {
-  --background: #faf7f2;
+  --background: #F6F4EE;
   --foreground: #1a1a1a;
   --card: #ffffff;
   --card-foreground: #1a1a1a;
   --popover: #ffffff;
   --popover-foreground: #1a1a1a;
-  --primary: #d4a574;
+  --primary: #D8A14F;
   --primary-foreground: #1a1a1a;
-  --secondary: #f5f0e8;
+  --secondary: #E9E5DA;
   --secondary-foreground: #1a1a1a;
-  --muted: #f5f0e8;
-  --muted-foreground: #6b6b6b;
-  --accent: #d4a574;
+  --muted: #E9E5DA;
+  --muted-foreground: #5c5c5c;
+  --accent: #D8A14F;
   --accent-foreground: #1a1a1a;
   --destructive: #dc2626;
   --destructive-foreground: #ffffff;
-  --border: #e5e0d8;
-  --input: #e5e0d8;
-  --ring: #d4a574;
+  --border: #E9E5DA;
+  --input: #E9E5DA;
+  --ring: #D8A14F;
   --chart-1: #6b9b5a;
   --chart-2: #7cb8a0;
-  --chart-3: #d4a574;
+  --chart-3: #D8A14F;
   --chart-4: #e8a87c;
   --chart-5: #c4956a;
   --radius: 0.625rem;
-  --sidebar: #faf7f2;
+  --radius-card: 28px;
+  --sidebar: #F6F4EE;
   --sidebar-foreground: #1a1a1a;
-  --sidebar-primary: #d4a574;
+  --sidebar-primary: #D8A14F;
   --sidebar-primary-foreground: #1a1a1a;
-  --sidebar-accent: #f5f0e8;
+  --sidebar-accent: #E9E5DA;
   --sidebar-accent-foreground: #1a1a1a;
-  --sidebar-border: #e5e0d8;
-  --sidebar-ring: #d4a574;
-  
-  /* Custom warm palette colors */
-  --amber: #d4a574;
-  --amber-light: #e8c9a0;
-  --amber-dark: #b8956a;
-  --cream: #faf7f2;
-  --cream-dark: #f5f0e8;
-  --sage: #6b9b5a;
-  --sage-light: #8fb882;
-  --coral: #e8a87c;
-  --coral-light: #f5d4c0;
-  --warning-bg: #fef3e8;
-  --warning-border: #f5d4c0;
-  --success-bg: #f0f7ed;
-  --consent-bg: #f5f3e8;
+  --sidebar-border: #E9E5DA;
+  --sidebar-ring: #D8A14F;
+  /* Paper / sage */
+  --paper: #E9E5DA;
+  --sage-pill: #c5d4bc;
+  --sage-pill-foreground: #2d3d2a;
+}
+
+/* Tactile paper feel: subtle grain overlay */
+.grain-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
 }
 
 .dark {
@@ -90,8 +91,9 @@
 }
 
 @theme inline {
-  --font-sans: 'Geist', 'Geist Fallback';
-  --font-mono: 'Geist Mono', 'Geist Mono Fallback';
+  --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-headings), var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-mono), ui-monospace, monospace;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -111,6 +113,9 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-paper: var(--paper);
+  --color-sage-pill: var(--sage-pill);
+  --color-sage-pill-foreground: var(--sage-pill-foreground);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
@@ -119,7 +124,8 @@
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-xl: var(--radius);
+  --radius-card: var(--radius-card);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -135,6 +141,35 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans antialiased;
   }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-headings);
+  }
+}
+
+.font-heading {
+  font-family: var(--font-headings), var(--font-body), ui-sans-serif, system-ui, sans-serif;
+}
+.font-mono {
+  font-family: var(--font-mono), ui-monospace, monospace;
+}
+
+/* Paper cards: 28px radius, white surface */
+.paper-card {
+  background-color: var(--card);
+  border-radius: var(--radius-card);
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+
+/* Sage pill badges */
+.sage-pill {
+  background-color: var(--sage-pill);
+  color: var(--sage-pill-foreground);
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-family: var(--font-mono);
 }
