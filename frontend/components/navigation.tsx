@@ -3,14 +3,12 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Phone, Heart, BookOpen, UserPlus, LayoutDashboard, Wrench } from "lucide-react"
+import { Heart, UserPlus, LayoutDashboard } from "lucide-react"
 
 const navLinks = [
   { href: "/#how-it-works", label: "How it works" },
   { href: "/#features", label: "Features" },
   { href: "/#why-everly", label: "Why Everly" },
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/#contact", label: "Contact" },
 ]
 
 export function Navigation() {
@@ -50,16 +48,10 @@ export function Navigation() {
         </nav>
 
         <div className="flex items-center gap-2 shrink-0">
-          <Button asChild variant="ghost" size="sm" className="hidden lg:inline-flex rounded-[28px] text-muted-foreground hover:text-foreground">
-            <Link href="/debug">
-              <Wrench className="h-4 w-4 mr-1.5" />
-              Debug
-            </Link>
-          </Button>
           <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex rounded-[28px] text-muted-foreground hover:text-foreground">
             <Link href="/create-elder">
               <UserPlus className="h-4 w-4 mr-1.5" />
-              Add elder
+              Add caregiver
             </Link>
           </Button>
           <Button asChild size="sm" className="rounded-[28px] bg-primary hover:bg-primary/90 text-primary-foreground">

@@ -12,7 +12,22 @@ export function toE164(phone: string): string {
   return `+${digits}`
 }
 
+function isValidUUID(str: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+  return uuidRegex.test(str)
+}
+
 export async function initiateCall(elder: Elder): Promise<{ callId: string }> {
+  const phoneNumberId = process.env.VAPI_PHONE_NUMBER_ID
+  
+  if (!phoneNumberId) {
+    throw new Error("VAPI_PHONE_NUMBER_ID environment variable is not set. Please add it to your environment variables.")
+  }
+  
+  if (!isValidUUID(phoneNumberId)) {
+    throw new Error(`VAPI_PHONE_NUMBER_ID must be a valid UUID. Current value: ${phoneNumberId}`)
+  }
+  
   const number = toE164(elder.phone)
   const response = await fetch(`${VAPI_BASE_URL}/call`, {
     method: "POST",
@@ -22,7 +37,7 @@ export async function initiateCall(elder: Elder): Promise<{ callId: string }> {
     },
     body: JSON.stringify({
       assistantId: process.env.VAPI_ASSISTANT_ID,
-      phoneNumberId: process.env.VAPI_PHONE_NUMBER_ID,
+      phoneNumberId,
       customer: {
         number,
         name: elder.name,
@@ -57,7 +72,11 @@ export async function initiateOutboundCall(
 ): Promise<{ callId: string }> {
   const phoneNumberId = process.env.VAPI_PHONE_NUMBER_ID
   if (!phoneNumberId) {
-    throw new Error("VAPI_PHONE_NUMBER_ID is required for outbound phone calls. Set it in .env.local.")
+    throw new Error("VAPI_PHONE_NUMBER_ID is required for outbound phone calls. Set it in your environment variables.")
+  }
+  
+  if (!isValidUUID(phoneNumberId)) {
+    throw new Error(`VAPI_PHONE_NUMBER_ID must be a valid UUID. Current value: ${phoneNumberId}`)
   }
   const name = options?.name?.trim() || "Guest"
   const variableValues = options?.variableValues ?? {}

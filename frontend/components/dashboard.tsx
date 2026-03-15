@@ -4,622 +4,507 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Card, CardContent } from "@/components/ui/card"
 import { 
-  Settings, 
-  AlertCircle, 
-  Share2, 
-  FileText, 
-  Plus,
-  Phone,
-  Heart,
-  Clock,
-  ArrowLeft,
-  Loader2,
-  ChevronRight,
-  BookOpen,
-  Calendar,
-  Sparkles
+  Phone, Heart, Clock, ArrowLeft, Loader2, ChevronRight,
+  BookOpen, Calendar, Sparkles, Smile, Mic, Volume2,
+  MessageCircle, Activity, TrendingUp, Users, Pill,
+  Play, Pause, Download, Share2, MoreHorizontal
 } from "lucide-react"
-import type { ElderData, CaregiverData } from "@/app/types"
+import { motion, AnimatePresence } from "framer-motion"
 import { useVapi } from "@/components/vapi-call-provider"
 import type { ElderLike } from "@/components/vapi-call-provider"
+import { CallDataViewer } from "@/components/call-data-viewer"
 
-// Beautiful hardcoded data for Dorothy - no nulls, no zeros, everything has values
-const DOROTHY_DATA = {
+// ============================================
+// DOROTHY - Beautiful Demo Persona
+// ============================================
+const DOROTHY = {
   name: "Dorothy Williams",
+  firstName: "Dorothy",
   age: 81,
   location: "Toronto, ON",
-  initials: "DW",
+  avatar: "👵",
   
-  // Stats - all have values
-  stats: {
-    callsThisMonth: 14,
-    storiesCaptured: 47,
-    happyMoodDays: "86%",
-    healthOnTrack: 12
+  vitals: {
+    mood: { value: 87, label: "Happy", trend: "up", emoji: "😊" },
+    engagement: { value: 94, label: "Engaged", trend: "up", emoji: "🤝" },
+    wellness: { value: 92, label: "Well", trend: "stable", emoji: "💪" },
+    connection: { value: 89, label: "Connected", trend: "up", emoji: "❤️" },
   },
   
-  // Story of the week - beautiful and complete
-  storyOfTheWeek: {
-    title: "The Summer I Taught in Rural Ontario",
-    date: "March 10, 2026",
-    excerpt: "It was 1967 — I was twenty-two and completely terrified. The schoolhouse had one room, thirty-four children across six grades, and a woodstove that I never did learn to light properly. But that was the proudest year of my life. I think about those children still.",
-    callCount: 3,
-    chapter: "Working Years"
+  thisWeek: {
+    calls: 4,
+    minutes: 127,
+    stories: 3,
+    memories: 2
   },
   
-  // Latest memory - always has content
-  latestMemory: {
-    text: "Mentioned enjoying time in the garden and checking on flowers. She said the tulips are starting to bloom early this year, just like they did when she was a child in Oakville.",
-    category: "Passions & Pastimes",
-    icon: "🌱",
+  latestCall: {
     date: "Today",
-    fromChapter: "Life's Simple Pleasures"
-  },
-  
-  // Recent calls - all populated
-  recentCalls: [
-    {
-      id: 1,
-      date: "Today",
-      time: "10:14 AM",
-      duration: "22 min",
-      mood: "happy" as const,
-      summary: "Talked about gardening plans for spring. Mentioned wanting to teach Emma how to grow tomatoes like her grandmother taught her.",
-    },
-    {
-      id: 2,
-      date: "Tue Mar 11",
-      time: "8:47 AM",
-      duration: "31 min",
-      mood: "nostalgic" as const,
-      summary: "Mentioned Harold's birthday. Seemed reflective. Recalled their first dance at the church social in 1963. Beautiful memories shared.",
-    },
-    {
-      id: 3,
-      date: "Mon Mar 10",
-      time: "3:20 PM",
-      duration: "18 min",
-      mood: "happy" as const,
-      summary: "Continued the rural Ontario teaching story. Remembered student names from 1967 — little Sarah with the pigtails who brought her apples.",
-    },
-    {
-      id: 4,
-      date: "Fri Mar 7",
-      time: "11:05 AM",
-      duration: "26 min",
-      mood: "cheerful" as const,
-      summary: "Asked about Jake's hockey game. Excited he scored his first goal. Laughed remembering Harold teaching their sons to skate.",
-    },
-  ],
-  
-  // Topics - all have percentages
-  topics: [
-    { name: "Family", percentage: 82, color: "bg-emerald-500" },
-    { name: "Memories", percentage: 71, color: "bg-blue-500" },
-    { name: "Gardening", percentage: 45, color: "bg-amber-500" },
-    { name: "Health", percentage: 28, color: "bg-rose-400" },
-  ],
-  
-  // Family members
-  familyMembers: [
-    { name: "Emma", relationship: "Granddaughter", initial: "E", color: "bg-amber-500" },
-    { name: "Jake", relationship: "Grandson", initial: "J", color: "bg-blue-500" },
-    { name: "Sarah", relationship: "Daughter", initial: "S", color: "bg-rose-400" },
-  ],
-  
-  // Medications - always has data
-  medications: [
-    { id: "1", name: "Metformin", time: "8:00 AM", days: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"], dosage: "500mg" },
-    { id: "2", name: "Lisinopril", time: "8:00 AM", days: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"], dosage: "10mg" },
-    { id: "3", name: "Vitamin D", time: "12:00 PM", days: ["Mon", "Wed", "Fri"], dosage: "1000 IU" },
-  ],
-  
-  // Alert - always has content
-  alert: {
-    date: "Tue Mar 11",
-    time: "8:47 AM",
-    message: "Dorothy mentioned feeling very alone and referenced Harold several times — our AI flagged a mood dip and notified you automatically.",
-    status: "Message sent"
+    time: "8:27 AM",
+    duration: "18 min",
+    excerpt: "Shared beautiful memories about her garden and spring planting plans...",
+    transcript: "We talked about the tulips coming up early this year. Dorothy remembered her mother's garden in Oakville and how she'd teach the grandchildren to plant seeds.",
+    mood: "Joyful",
+    topics: ["Gardening", "Family", "Spring"]
   }
 }
 
 interface DashboardProps {
-  elder: ElderData
-  caregiver: CaregiverData
   onBackToList?: () => void
 }
 
-export function Dashboard({ elder, onBackToList }: DashboardProps) {
-  const [callFilter, setCallFilter] = useState<"week" | "all">("week")
-  const { startCall, endCall, isActive, isConnecting, error } = useVapi()
-  const [mounted, setMounted] = useState(false)
+export function Dashboard({ onBackToList }: DashboardProps) {
+  const [activeTab, setActiveTab] = useState<"overview" | "calls" | "memories">("overview")
+  const [showWaveform, setShowWaveform] = useState(false)
+  const [isCollectingData, setIsCollectingData] = useState(false)
+  const { startCall, endCall, isActive, isConnecting, error, lastCallData } = useVapi()
 
+  // Track when we're collecting data after call ends
   useEffect(() => {
-    setMounted(true)
-  }, [])
+    if (!isActive && isCollectingData) {
+      // Call ended, show collecting state for a few seconds
+      const timer = setTimeout(() => {
+        setIsCollectingData(false)
+      }, 8000) // Show for 8 seconds
+      return () => clearTimeout(timer)
+    }
+  }, [isActive, isCollectingData])
 
-  // Build elder data for VAPI - with fallbacks
+  const handleEndCall = async () => {
+    setIsCollectingData(true)
+    await endCall()
+  }
+
   const elderLike: ElderLike = {
-    name: `${elder.firstName || "Dorothy"} ${elder.lastName || "Williams"}`.trim(),
-    age: (() => {
-      if (!elder.dateOfBirth) return DOROTHY_DATA.age
-      const birthDate = new Date(elder.dateOfBirth)
-      const today = new Date()
-      let age = today.getFullYear() - birthDate.getFullYear()
-      const m = today.getMonth() - birthDate.getMonth()
-      if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--
-      return age || DOROTHY_DATA.age
-    })(),
-    biography: elder.location 
-      ? `Lives in ${elder.location}. ${elder.thingsTheyLove || ""}`.trim() 
-      : `Lives in ${DOROTHY_DATA.location}. Enjoys gardening, family time, and sharing stories from her teaching years.`,
-    hobbies: elder.thingsTheyLove 
-      ? elder.thingsTheyLove.split(",").map((s) => s.trim()).filter(Boolean) 
-      : ["Gardening", "Baking", "Family history", "Reading"],
-    medications: (elder.medicationSchedule?.length ?? 0) > 0 
-      ? elder.medicationSchedule.map((m) => ({ name: m.name, time: m.time }))
-      : DOROTHY_DATA.medications.map(m => ({ name: m.name, time: m.time })),
-    personality_notes: elder.thingsTheyLove || "Warm, nostalgic, loves sharing stories about family and teaching",
+    name: DOROTHY.name,
+    age: DOROTHY.age,
+    biography: `Lives in ${DOROTHY.location}. Enjoys gardening, family time, and sharing stories.`,
+    hobbies: ["Gardening", "Baking", "Family history"],
+    medications: [{ name: "Metformin", time: "8:00 AM" }],
+    personality_notes: "Warm, nostalgic, loves sharing stories",
   }
 
-  const fullName = `${elder.firstName || "Dorothy"} ${elder.lastName || "Williams"}`
-  const initials = elder.firstName && elder.lastName 
-    ? `${elder.firstName[0]}${elder.lastName[0]}` 
-    : DOROTHY_DATA.initials
-  const location = elder.location || DOROTHY_DATA.location
-  const age = elderLike.age
-
-  // Get meds data with fallback
-  const medsList = (elder.medicationSchedule?.length ?? 0) > 0 
-    ? elder.medicationSchedule 
-    : DOROTHY_DATA.medications
-  const medsOnTrack = medsList.length
-
-  // Use hardcoded calls if no real data
-  const displayCalls = DOROTHY_DATA.recentCalls
-
-  if (!mounted) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <Heart className="w-12 h-12 text-primary animate-pulse mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading dashboard...</p>
-        </div>
-      </div>
-    )
-  }
+  // Trigger waveform animation when call is active
+  useEffect(() => {
+    setShowWaveform(isActive)
+  }, [isActive])
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-5xl mx-auto px-4 py-6">
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50">
+      {/* Animated Background */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-orange-200/30 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-rose-200/30 rounded-full blur-3xl animate-pulse delay-1000" />
+      </div>
+
+      <div className="relative max-w-6xl mx-auto px-4 py-6">
         {/* Header */}
-        <header className="flex items-center justify-between mb-6">
+        <header className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
             {onBackToList && (
-              <Button variant="ghost" size="icon" onClick={onBackToList} className="shrink-0">
+              <Button variant="ghost" size="icon" onClick={onBackToList} className="rounded-full">
                 <ArrowLeft className="w-5 h-5" />
               </Button>
             )}
-            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-xl font-semibold text-primary-foreground font-heading shadow-lg">
-              {initials}
+            
+            {/* Avatar with Status Ring */}
+            <div className="relative">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-3xl shadow-lg">
+                {DOROTHY.avatar}
+              </div>
+              <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-4 border-white flex items-center justify-center">
+                <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
+              </div>
             </div>
+            
             <div>
-              <h1 className="text-xl font-semibold text-foreground font-heading">{fullName}</h1>
-              <p className="text-sm text-muted-foreground">
-                {age} years · {location}
+              <h1 className="text-2xl font-bold text-gray-900">{DOROTHY.name}</h1>
+              <p className="text-sm text-gray-600 flex items-center gap-2">
+                <span className="w-2 h-2 bg-green-500 rounded-full" />
+                {DOROTHY.age} years · {DOROTHY.location}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="rounded-full px-3 py-1 bg-green-50 text-green-700 border-green-200">
-              <span className="w-2 h-2 rounded-full bg-green-500 mr-2 animate-pulse" />
-              Active
-            </Badge>
-            <Button variant="outline" className="border-border rounded-full" asChild>
-              <Link href={`/storybook/${elder.id || "dorothy"}`}>
-                <BookOpen className="w-4 h-4 mr-2" />
+          
+          <div className="flex items-center gap-3">
+            <Button variant="outline" className="rounded-full border-orange-200 bg-white/80 backdrop-blur" asChild>
+              <Link href="/storybook/dorothy">
+                <BookOpen className="w-4 h-4 mr-2 text-orange-600" />
                 Storybook
               </Link>
             </Button>
-            <Button
-              className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full shadow-lg shadow-primary/20"
-              onClick={() => startCall(elderLike)}
-              disabled={isConnecting || isActive}
-            >
-              {isConnecting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Phone className="w-4 h-4 mr-2" />}
-              {isActive ? "On call…" : "Start call"}
-            </Button>
-            <Button variant="outline" className="border-border rounded-full">
-              <Settings className="w-4 h-4" />
-            </Button>
+            
+            {/* Call Button with Animation */}
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button
+                className={`rounded-full shadow-lg px-6 ${
+                  isActive 
+                    ? "bg-red-500 hover:bg-red-600 text-white" 
+                    : "bg-gradient-to-r from-orange-500 to-rose-500 hover:from-orange-600 hover:to-rose-600 text-white"
+                }`}
+                onClick={() => isActive ? handleEndCall() : startCall(elderLike)}
+                disabled={isConnecting}
+              >
+                {isConnecting ? (
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                ) : isActive ? (
+                  <><Phone className="w-4 h-4 mr-2" /> End</>
+                ) : (
+                  <><Phone className="w-4 h-4 mr-2" /> Call</>
+                )}
+              </Button>
+            </motion.div>
           </div>
         </header>
 
         {error && (
-          <div className="mb-4 p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-sm">
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700"
+          >
             {error}
-          </div>
+          </motion.div>
         )}
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-4 gap-4 mb-6">
-          <StatCard 
-            value={String(DOROTHY_DATA.stats.callsThisMonth)} 
-            label="Calls this month" 
-            icon={<Phone className="w-4 h-4" />}
-          />
-          <StatCard 
-            value={String(DOROTHY_DATA.stats.storiesCaptured)} 
-            label="Stories captured" 
-            icon={<BookOpen className="w-4 h-4" />}
-          />
-          <StatCard 
-            value={DOROTHY_DATA.stats.happyMoodDays} 
-            label="Happy mood days" 
-            icon={<Heart className="w-4 h-4" />}
-          />
-          <StatCard 
-            value={String(medsOnTrack)} 
-            label="Health on track (days)" 
-            icon={<Clock className="w-4 h-4" />}
-          />
-        </div>
-
-        {/* Health Schedule */}
-        <div className="paper-card p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-              <Clock className="w-4 h-4" />
-              Health Schedule
-            </h3>
-            <Badge variant="outline" className="rounded-full text-green-600 border-green-200 bg-green-50">
-              All on track
-            </Badge>
-          </div>
-          
-          <div className="space-y-3">
-            {medsList.map((med) => (
-              <div
-                key={med.id || med.name}
-                className="flex items-center justify-between bg-secondary/30 rounded-2xl p-4 hover:bg-secondary/50 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Clock className="w-5 h-5 text-primary" />
+        {/* Live Call Indicator */}
+        <AnimatePresence>
+          {isActive && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="mb-8"
+            >
+              <Card className="bg-gradient-to-r from-orange-500 to-rose-500 text-white border-0 overflow-hidden">
+                <CardContent className="p-6 relative">
+                  {/* Waveform Animation */}
+                  <div className="absolute inset-0 flex items-center justify-center opacity-20">
+                    {[...Array(20)].map((_, i) => (
+                      <motion.div
+                        key={i}
+                        className="w-1 mx-0.5 bg-white rounded-full"
+                        animate={{
+                          height: [20, 60, 20],
+                        }}
+                        transition={{
+                          duration: 0.5,
+                          repeat: Infinity,
+                          delay: i * 0.05,
+                        }}
+                      />
+                    ))}
                   </div>
-                  <div>
-                    <p className="font-medium text-foreground">{med.name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {formatTime(med.time)} · {(med.dosage || "As prescribed")}
-                    </p>
-                  </div>
-                </div>
-                <Badge variant="outline" className="rounded-full bg-green-50 text-green-700 border-green-200">
-                  Taken
-                </Badge>
-              </div>
-            ))}
-          </div>
-        </div>
-  
-        {/* Alert */}
-        <div className="paper-card p-4 mb-6 flex items-start gap-3 border-l-4 border-l-amber-400">
-          <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
-            <AlertCircle className="w-4 h-4 text-amber-600" />
-          </div>
-          <div className="flex-1">
-            <div className="flex items-center gap-2 text-sm mb-1">
-              <span className="font-medium text-amber-700">Attention</span>
-              <span className="text-muted-foreground">{DOROTHY_DATA.alert.date}</span>
-              <span className="text-muted-foreground">·</span>
-              <span className="text-muted-foreground">{DOROTHY_DATA.alert.time}</span>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              {DOROTHY_DATA.alert.message}
-            </p>
-          </div>
-          <span className="shrink-0 text-xs font-medium text-green-600 bg-green-50 px-3 py-1 rounded-full">
-            {DOROTHY_DATA.alert.status}
-          </span>
-        </div>
-
-        {/* Story of the Week - Beautiful Card */}
-        <Link href={`/storybook/${elder.id || "dorothy"}`} className="block mb-6">
-          <div className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/10 via-secondary/30 to-background border border-primary/20 p-8 hover:shadow-xl transition-all duration-300">
-            {/* Decorative elements */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-            <div className="absolute bottom-0 left-0 w-48 h-48 bg-amber-200/20 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2" />
-            
-            <div className="relative">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <Badge className="rounded-full bg-primary text-primary-foreground">
-                    <Sparkles className="w-3 h-3 mr-1" />
-                    Story of the Week
-                  </Badge>
-                  <span className="text-sm text-muted-foreground flex items-center gap-1">
-                    <Calendar className="w-3 h-3" />
-                    {DOROTHY_DATA.storyOfTheWeek.date}
-                  </span>
-                </div>
-                <Button variant="ghost" size="sm" className="text-primary group-hover:translate-x-1 transition-transform rounded-full">
-                  View Full Storybook
-                  <ChevronRight className="w-4 h-4 ml-1" />
-                </Button>
-              </div>
-              
-              <div className="flex items-start gap-4 mb-4">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center text-3xl shrink-0">
-                  📚
-                </div>
-                <div className="flex-1">
-                  <Badge variant="outline" className="rounded-full mb-2 text-xs">
-                    From the "{DOROTHY_DATA.storyOfTheWeek.chapter}" chapter
-                  </Badge>
-                  <h2 className="text-2xl font-bold text-foreground font-heading mb-2 group-hover:text-primary transition-colors">
-                    {DOROTHY_DATA.storyOfTheWeek.title}
-                  </h2>
-                </div>
-              </div>
-              
-              <blockquote className="text-foreground/90 italic mb-4 leading-relaxed text-lg pl-4 border-l-2 border-primary/30">
-                &ldquo;{DOROTHY_DATA.storyOfTheWeek.excerpt}&rdquo;
-              </blockquote>
-              
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <Phone className="w-3 h-3" />
-                    Captured over {DOROTHY_DATA.storyOfTheWeek.callCount} calls
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Clock className="w-3 h-3" />
-                    12 min read
-                  </span>
-                </div>
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="rounded-full bg-card/50 hover:bg-card"
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                  >
-                    <Share2 className="w-4 h-4 mr-2" />
-                    Share
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="rounded-full bg-card/50 hover:bg-card"
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                  >
-                    <FileText className="w-4 h-4 mr-2" />
-                    Export
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </Link>
-
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-3 gap-6">
-          {/* Recent Calls - Takes 2 columns */}
-          <div className="col-span-2 paper-card p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider font-mono flex items-center gap-2">
-                <Phone className="w-4 h-4" />
-                Recent Calls
-              </h3>
-              <div className="flex bg-secondary/50 rounded-full p-1">
-                <button
-                  onClick={() => setCallFilter("week")}
-                  className={`px-3 py-1.5 text-sm rounded-full transition-colors ${
-                    callFilter === "week"
-                      ? "bg-card text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  This week
-                </button>
-                <button
-                  onClick={() => setCallFilter("all")}
-                  className={`px-3 py-1.5 text-sm rounded-full transition-colors ${
-                    callFilter === "all"
-                      ? "bg-card text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  All
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              {displayCalls.map((call) => (
-                <CallLogItem key={call.id} call={call} />
-              ))}
-            </div>
-          </div>
-
-          {/* Right Sidebar */}
-          <div className="space-y-6">
-            {/* Latest Memory Card */}
-            <Link href={`/storybook/${elder.id || "dorothy"}`} className="block">
-              <div className="paper-card p-5 hover:bg-secondary/30 transition-colors cursor-pointer group">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider font-mono flex items-center gap-2">
-                    <Sparkles className="w-4 h-4" />
-                    Latest Memory
-                  </h3>
-                  <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
-                </div>
-                <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-4 border border-amber-100">
-                  <div className="flex items-start gap-3">
-                    <span className="text-3xl">{DOROTHY_DATA.latestMemory.icon}</span>
-                    <div>
-                      <p className="text-sm text-foreground leading-relaxed italic">
-                        &ldquo;{DOROTHY_DATA.latestMemory.text}&rdquo;
-                      </p>
-                      <div className="flex items-center gap-2 mt-3">
-                        <Badge variant="outline" className="rounded-full text-xs bg-white/50">
-                          {DOROTHY_DATA.latestMemory.category}
-                        </Badge>
-                        <span className="text-xs text-muted-foreground">{DOROTHY_DATA.latestMemory.date}</span>
+                  
+                  <div className="relative flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                        <Mic className="w-6 h-6 animate-pulse" />
+                      </div>
+                      <div>
+                        <p className="text-lg font-semibold">Call in Progress</p>
+                        <p className="text-white/80">Speaking with Dorothy...</p>
                       </div>
                     </div>
+                    <div className="flex items-center gap-2">
+                      <Volume2 className="w-5 h-5 animate-pulse" />
+                      <span className="text-sm">Listening</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Collecting Data Loading State */}
+        <AnimatePresence>
+          {isCollectingData && !isActive && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="mb-8"
+            >
+              <Card className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white border-0 overflow-hidden">
+                <CardContent className="p-6 relative">
+                  {/* Spinner Animation */}
+                  <div className="absolute inset-0 flex items-center justify-center opacity-10">
+                    <motion.div
+                      className="w-32 h-32 border-4 border-white rounded-full"
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                    />
+                    <motion.div
+                      className="absolute w-24 h-24 border-4 border-white rounded-full"
+                      animate={{ rotate: -360 }}
+                      transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                    />
+                  </div>
+                  
+                  <div className="relative flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                        <Loader2 className="w-6 h-6 animate-spin" />
+                      </div>
+                      <div>
+                        <p className="text-lg font-semibold">Collecting Memories...</p>
+                        <p className="text-white/80">Processing conversation with Dorothy</p>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end gap-1">
+                      <div className="flex gap-1">
+                        {[0, 1, 2].map((i) => (
+                          <motion.div
+                            key={i}
+                            className="w-2 h-2 bg-white rounded-full"
+                            animate={{ 
+                              scale: [1, 1.5, 1],
+                              opacity: [0.5, 1, 0.5]
+                            }}
+                            transition={{
+                              duration: 1,
+                              repeat: Infinity,
+                              delay: i * 0.2,
+                            }}
+                          />
+                        ))}
+                      </div>
+                      <span className="text-xs text-white/70">Analyzing transcript...</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Just Captured - Flashy Card }}
+        <AnimatePresence>
+          {lastCallData && (
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="mb-8"
+            >
+              <Card className="border-2 border-green-400 bg-gradient-to-br from-green-50 to-emerald-50 overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-green-400/20 rounded-full -translate-y-1/2 translate-x-1/2" />
+                
+                <CardContent className="p-6 relative">
+                  <div className="flex items-start gap-4">
+                    <div className="w-14 h-14 bg-green-500 rounded-2xl flex items-center justify-center text-2xl shadow-lg">
+                      ✨
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge className="bg-green-500 text-white rounded-full">
+                          Just Captured
+                        </Badge>
+                        <span className="text-xs text-gray-500">
+                          {new Date().toLocaleTimeString()}
+                        </span>
+                      </div>
+                      
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                        {lastCallData.chapter_title}
+                      </h3>
+                      
+                      <p className="text-gray-700 italic mb-3">
+                        "{lastCallData.chapter_content}"
+                      </p>
+                      
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="rounded-full bg-white">
+                          {lastCallData.mood === 'happy' ? '😊' : '🙂'} {lastCallData.mood}
+                        </Badge>
+                        {lastCallData.meds_taken && (
+                          <Badge variant="outline" className="rounded-full bg-green-100 text-green-700 border-green-300">
+                            <Pill className="w-3 h-3 mr-1" /> Meds confirmed
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <Button variant="ghost" size="icon" className="rounded-full" onClick={() => {}}>
+                      <Share2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Vitals Grid */}
+        <div className="grid grid-cols-4 gap-4 mb-8">
+          {Object.entries(DOROTHY.vitals).map(([key, vital], i) => (
+            <motion.div
+              key={key}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.1 }}
+            >
+              <Card className="bg-white/80 backdrop-blur border-0 shadow-sm hover:shadow-md transition-shadow">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-gray-500 capitalize">{key}</span>
+                    {vital.trend === "up" && <TrendingUp className="w-4 h-4 text-green-500" />}
+                  </div>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-3xl font-bold text-gray-900">{vital.value}%</span>
+                    <span className="text-2xl">{vital.emoji}</span>
+                  </div>
+                  <p className="text-sm text-gray-600 mt-1">{vital.label}</p>
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Main Content */}
+        <div className="grid grid-cols-3 gap-6">
+          {/* Left Column - Latest Call */}
+          <div className="col-span-2 space-y-6">
+            {/* This Week Stats */}
+            <Card className="bg-white/80 backdrop-blur border-0">
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <Activity className="w-5 h-5 text-orange-500" />
+                  This Week
+                </h3>
+                <div className="grid grid-cols-4 gap-4">
+                  {[
+                    { icon: Phone, value: DOROTHY.thisWeek.calls, label: "Calls" },
+                    { icon: Clock, value: DOROTHY.thisWeek.minutes, label: "Minutes" },
+                    { icon: MessageCircle, value: DOROTHY.thisWeek.stories, label: "Stories" },
+                    { icon: Sparkles, value: DOROTHY.thisWeek.memories, label: "Memories" },
+                  ].map((stat, i) => (
+                    <div key={i} className="text-center p-4 rounded-2xl bg-gradient-to-br from-orange-50 to-rose-50">
+                      <stat.icon className="w-6 h-6 mx-auto mb-2 text-orange-500" />
+                      <div className="text-2xl font-bold text-gray-900">{stat.value}</div>
+                      <div className="text-sm text-gray-600">{stat.label}</div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Latest Call Card */}
+            <Card className="bg-gradient-to-br from-amber-50 to-orange-50 border-orange-200 overflow-hidden">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center">
+                      <Phone className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900">Latest Call</h3>
+                      <p className="text-sm text-gray-600">{DOROTHY.latestCall.date} · {DOROTHY.latestCall.time}</p>
+                    </div>
+                  </div>
+                  <Badge className="bg-orange-500 text-white rounded-full">
+                    {DOROTHY.latestCall.duration}
+                  </Badge>
+                </div>
+
+                <div className="bg-white/60 rounded-xl p-4 mb-4">
+                  <p className="text-gray-700">{DOROTHY.latestCall.transcript}</p>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="flex gap-2">
+                    {DOROTHY.latestCall.topics.map(topic => (
+                      <Badge key={topic} variant="outline" className="rounded-full bg-white/80">
+                        {topic}
+                      </Badge>
+                    ))}
+                  </div>
+                  <Button variant="ghost" size="sm" className="rounded-full">
+                    <Play className="w-4 h-4 mr-1" /> Replay
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* All Calls Section */}
+            <CallDataViewer />
+          </div>
+
+          {/* Right Column - Quick Actions & Info */}
+          <div className="space-y-6">
+            {/* Quick Actions */}
+            <Card className="bg-white/80 backdrop-blur border-0">
+              <CardContent className="p-4">
+                <h3 className="text-sm font-semibold text-gray-500 uppercase mb-4">Quick Actions</h3>
+                <div className="space-y-2">
+                  <Button variant="outline" className="w-full justify-start rounded-xl" asChild>
+                    <Link href="/storybook/dorothy">
+                      <BookOpen className="w-4 h-4 mr-2 text-amber-600" />
+                      View Storybook
+                      <ChevronRight className="w-4 h-4 ml-auto" />
+                    </Link>
+                  </Button>
+                  <Button variant="outline" className="w-full justify-start rounded-xl">
+                    <Users className="w-4 h-4 mr-2 text-blue-600" />
+                    Family Members
+                    <ChevronRight className="w-4 h-4 ml-auto" />
+                  </Button>
+                  <Button variant="outline" className="w-full justify-start rounded-xl">
+                    <Download className="w-4 h-4 mr-2 text-green-600" />
+                    Export Report
+                    <ChevronRight className="w-4 h-4 ml-auto" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Medication Status */}
+            <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center">
+                    <Pill className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900">Medications</h3>
+                    <p className="text-sm text-green-700">On track today</p>
                   </div>
                 </div>
-                <p className="text-xs text-muted-foreground mt-3 text-center">
-                  From the <span className="text-primary font-medium">{DOROTHY_DATA.latestMemory.fromChapter}</span> chapter
+                <div className="space-y-2">
+                  {["Metformin", "Lisinopril", "Vitamin D"].map((med, i) => (
+                    <div key={i} className="flex items-center gap-2 text-sm">
+                      <div className="w-2 h-2 bg-green-500 rounded-full" />
+                      <span className="text-gray-700">{med}</span>
+                      <span className="text-gray-400 ml-auto">Taken</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Next Scheduled Call */}
+            <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center">
+                    <Calendar className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900">Next Call</h3>
+                    <p className="text-sm text-blue-700">Tomorrow, 9:00 AM</p>
+                  </div>
+                </div>
+                <p className="text-sm text-gray-600">
+                  Dorothy loves morning calls. She'll likely want to talk about her garden.
                 </p>
-              </div>
-            </Link>
-
-            {/* Topics This Month */}
-            <div className="paper-card p-6">
-              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4 font-mono flex items-center gap-2">
-                <Heart className="w-4 h-4" />
-                Topics This Month
-              </h3>
-              <div className="space-y-3">
-                {DOROTHY_DATA.topics.map((topic) => (
-                  <TopicBar key={topic.name} topic={topic} />
-                ))}
-              </div>
-            </div>
-
-            {/* Family Members */}
-            <div className="paper-card p-6">
-              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4 font-mono flex items-center gap-2">
-                <Heart className="w-4 h-4" />
-                Family Members
-              </h3>
-              <div className="space-y-3">
-                {DOROTHY_DATA.familyMembers.map((member) => (
-                  <FamilyMemberItem key={member.name} member={member} />
-                ))}
-                <button className="w-full py-2 border border-dashed border-border rounded-full text-sm text-muted-foreground hover:text-foreground hover:border-primary transition-colors flex items-center justify-center gap-2">
-                  <Plus className="w-4 h-4" />
-                  Add family member
-                </button>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
-
-        {isActive && (
-          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
-            <Button
-              onClick={endCall}
-              className="bg-red-500 hover:bg-red-600 text-white shadow-lg rounded-full px-6"
-            >
-              <Phone className="w-4 h-4 mr-2" />
-              End call
-            </Button>
-          </div>
-        )}
-
-        {/* Footer */}
-        <footer className="mt-8 pt-6 border-t border-border flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
-              <Heart className="w-4 h-4" />
-            </div>
-            <span className="text-sm font-medium text-foreground font-heading">Everly</span>
-          </div>
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <a href="#" className="hover:text-foreground transition-colors">Help</a>
-            <a href="#" className="hover:text-foreground transition-colors">Privacy</a>
-            <a href="#" className="hover:text-foreground transition-colors">Contact</a>
-          </div>
-        </footer>
       </div>
     </div>
   )
-}
-
-// Sub-components
-function StatCard({ value, label, icon }: { value: string; label: string; icon: React.ReactNode }) {
-  return (
-    <div className="paper-card p-4 hover:bg-secondary/30 transition-colors">
-      <div className="flex items-center justify-between mb-2">
-        <div className="text-2xl font-bold text-foreground font-heading">{value}</div>
-        <div className="text-muted-foreground">{icon}</div>
-      </div>
-      <div className="text-sm text-muted-foreground font-mono">{label}</div>
-    </div>
-  )
-}
-
-function CallLogItem({ call }: { call: typeof DOROTHY_DATA.recentCalls[0] }) {
-  const moodConfig = {
-    happy: { icon: "😊", bg: "bg-green-100", text: "text-green-700", label: "Happy" },
-    cheerful: { icon: "🌟", bg: "bg-amber-100", text: "text-amber-700", label: "Cheerful" },
-    neutral: { icon: "😐", bg: "bg-gray-100", text: "text-gray-600", label: "Neutral" },
-    nostalgic: { icon: "💭", bg: "bg-blue-100", text: "text-blue-700", label: "Nostalgic" },
-    sad: { icon: "😔", bg: "bg-rose-100", text: "text-rose-700", label: "Sad" },
-  }
-
-  const mood = moodConfig[call.mood] || moodConfig.neutral
-
-  return (
-    <div className="flex items-start gap-3 group">
-      <div className={`w-10 h-10 rounded-full ${mood.bg} flex items-center justify-center text-lg shrink-0`}>
-        {mood.icon}
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 text-sm flex-wrap">
-          <span className="font-medium text-foreground">{call.date}</span>
-          <span className="text-muted-foreground">{call.time}</span>
-          <span className="text-muted-foreground">·</span>
-          <span className="text-muted-foreground">{call.duration}</span>
-          <Badge variant="outline" className={`rounded-full text-xs ${mood.text} ${mood.bg} border-0`}>
-            {mood.label}
-          </Badge>
-        </div>
-        <p className="text-sm text-muted-foreground mt-1 leading-relaxed">{call.summary}</p>
-      </div>
-    </div>
-  )
-}
-
-function TopicBar({ topic }: { topic: typeof DOROTHY_DATA.topics[0] }) {
-  return (
-    <div className="flex items-center gap-3">
-      <span className="text-sm text-foreground w-20 font-mono">{topic.name}</span>
-      <div className="flex-1 h-2.5 bg-secondary rounded-full overflow-hidden">
-        <div
-          className={`h-full ${topic.color} rounded-full transition-all duration-500`}
-          style={{ width: `${topic.percentage}%` }}
-        />
-      </div>
-      <span className="text-sm text-muted-foreground w-10 text-right">{topic.percentage}%</span>
-    </div>
-  )
-}
-
-function FamilyMemberItem({ member }: { member: typeof DOROTHY_DATA.familyMembers[0] }) {
-  return (
-    <div className="flex items-center justify-between group">
-      <div className="flex items-center gap-3">
-        <div className={`w-9 h-9 rounded-full ${member.color} flex items-center justify-center text-sm font-medium text-white font-heading`}>
-          {member.initial}
-        </div>
-        <span className="text-sm font-medium text-foreground">{member.name}</span>
-      </div>
-      <span className="text-sm text-muted-foreground font-mono">{member.relationship}</span>
-    </div>
-  )
-}
-
-function formatTime(time: string) {
-  if (!time) return "8:00 AM"
-  if (time.toLowerCase().includes("am") || time.toLowerCase().includes("pm")) return time
-  const [hourStr, minutes] = time.split(":")
-  const hour = parseInt(hourStr)
-  const suffix = hour >= 12 ? "PM" : "AM"
-  const displayHour = hour % 12 === 0 ? 12 : hour % 12
-  return `${displayHour}:${minutes} ${suffix}`
 }

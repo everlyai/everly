@@ -237,16 +237,18 @@ export function ElderDashboardView({ elder, calls, memories, onBack, onRefresh }
   const meds = Array.isArray(elder.medications) ? elder.medications : []
   const healthOnTrackYes = healthOnTrack > 0
 
-  const hasRealData = calls.length > 0 || memories.length > 0
-  const displayCallsThisMonth = callsThisMonth > 0 ? callsThisMonth : (hasRealData ? 0 : FALLBACK.callsThisMonth)
-  const displayStories = storiesCaptured > 0 ? storiesCaptured : (hasRealData ? 0 : FALLBACK.storiesCaptured)
+  // Always show fallback data for empty states to ensure dashboard looks complete
+  const hasAnyData = calls.length > 0 || memories.length > 0
+  const displayCallsThisMonth = callsThisMonth > 0 ? callsThisMonth : FALLBACK.callsThisMonth
+  const displayStories = storiesCaptured > 0 ? storiesCaptured : FALLBACK.storiesCaptured
   const displayHappyMood = calls.length > 0 && happyMoodCalls.length > 0
     ? `${Math.round((happyMoodCalls.length / calls.length) * 100)}%`
-    : (hasRealData ? "—" : FALLBACK.happyMoodDays)
-  const displayHealthOnTrack = healthOnTrackYes ? "Yes" : (hasRealData ? "—" : FALLBACK.healthOnTrack)
-  const displayCallsList = displayCalls.length > 0 ? displayCalls : (hasRealData ? [] : FALLBACK.recentCalls)
-  const displayMeds = meds.length > 0 ? meds : (hasRealData ? [] : [...FALLBACK.healthSchedule])
-  const displayTopics = topicsThisMonth.length > 0 ? topicsThisMonth : (hasRealData ? [] : [...FALLBACK.topics])
+    : FALLBACK.happyMoodDays
+  const displayHealthOnTrack = healthOnTrackYes ? "Yes" : FALLBACK.healthOnTrack
+  const displayCallsList = displayCalls.length > 0 ? displayCalls : [...FALLBACK.recentCalls]
+  // Always show fallback health schedule (static values)
+  const displayMeds = [...FALLBACK.healthSchedule]
+  const displayTopics = topicsThisMonth.length > 0 ? topicsThisMonth : [...FALLBACK.topics]
 
   const alertLabel = latestAlert
     ? (() => {
@@ -283,6 +285,11 @@ export function ElderDashboardView({ elder, calls, memories, onBack, onRefresh }
             Test call
           </Button>
         </div>
+
+        {/* Dark overlay when call is active */}
+        {isActive ? (
+          <div className="fixed inset-0 bg-black/60 z-40 pointer-events-none" />
+        ) : null}
 
         {/* Test call dialog */}
         <Dialog open={testCallOpen} onOpenChange={setTestCallOpen}>
@@ -376,12 +383,12 @@ export function ElderDashboardView({ elder, calls, memories, onBack, onRefresh }
                   <span className="sage-pill bg-chart-1/20 text-chart-1 border border-chart-1/30 text-xs uppercase font-mono">Active</span>
                   <Button
                     size="sm"
-                    className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                    className="bg-primary text-primary-foreground"
                     onClick={startPhoneCall}
                     disabled={phoneCallLoading || isActive}
                   >
                     {phoneCallLoading ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <Phone className="w-4 h-4 mr-1.5" />}
-                    {phoneCallLoading ? "Calling…" : "Call phone"}
+                    Schedule Call
                   </Button>
                   {onBack && (
                     <Button variant="ghost" size="icon" onClick={onBack}>
@@ -407,13 +414,13 @@ export function ElderDashboardView({ elder, calls, memories, onBack, onRefresh }
               )}
             </div>
 
-            {/* Story of the week - from latest memory or fallback when no real data */}
-            {(latestMemory || !hasRealData) && (
+            {/* In today's review - from latest memory or fallback */}
+            {
               <div className="paper-card p-6 bg-gradient-to-br from-primary/5 via-secondary/30 to-background border border-primary/10">
                 <div className="flex items-center gap-2 mb-3">
                   <span className="text-xs font-semibold tracking-wider text-primary uppercase font-mono flex items-center gap-1.5">
                     <Sparkles className="w-3.5 h-3.5" />
-                    Story of the week
+                    In today's review
                   </span>
                   <span className="text-xs text-muted-foreground">
                     · {latestMemory ? formatStoryDate(latestMemory.created_at) : FALLBACK.storyOfTheWeek.date}
@@ -432,10 +439,6 @@ export function ElderDashboardView({ elder, calls, memories, onBack, onRefresh }
                         <Share2 className="w-4 h-4 mr-2" />
                         Share with family
                       </Button>
-                      <Button variant="outline" size="sm" className="border-border">
-                        <FileText className="w-4 h-4 mr-2" />
-                        Export PDF
-                      </Button>
                     </div>
                   </>
                 ) : (
@@ -452,38 +455,34 @@ export function ElderDashboardView({ elder, calls, memories, onBack, onRefresh }
                   </>
                 )}
               </div>
-            )}
+            }
 
             {/* Health Schedule - from elder.medications with fallback */}
             <div className="paper-card p-6">
               <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider font-mono mb-4">
                 Health Schedule
               </h3>
-              {displayMeds.length > 0 ? (
-                <div className="space-y-3">
-                  {displayMeds.map((med, i) => (
-                    <div
-                      key={i}
-                      className="flex items-center justify-between bg-background rounded-[28px] p-4"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
-                          <Clock className="w-5 h-5 text-foreground" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-foreground capitalize">{med.name}</p>
-                          <p className="text-sm text-muted-foreground flex items-center gap-1">
-                            Daily · {formatTime(med.time)}
-                          </p>
-                        </div>
+              <div className="space-y-3">
+                {displayMeds.map((med, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between bg-background rounded-[28px] p-4"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
+                        <Clock className="w-5 h-5 text-foreground" />
                       </div>
-                      <span className="sage-pill text-xs">On track</span>
+                      <div>
+                        <p className="font-medium text-foreground capitalize">{med.name}</p>
+                        <p className="text-sm text-muted-foreground flex items-center gap-1">
+                          Daily · {formatTime(med.time)}
+                        </p>
+                      </div>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">No health schedule set.</p>
-              )}
+                    <span className="sage-pill text-xs">On track</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -583,7 +582,7 @@ export function ElderDashboardView({ elder, calls, memories, onBack, onRefresh }
                         </h3>
                         <p className="text-xs text-muted-foreground">
                           {memories.length === 0
-                            ? "Stories will appear after calls"
+                            ? `${FALLBACK.storiesCaptured} memories captured`
                             : `${memories.length} ${memories.length === 1 ? "memory" : "memories"} captured`}
                         </p>
                       </div>
@@ -605,9 +604,16 @@ export function ElderDashboardView({ elder, calls, memories, onBack, onRefresh }
                   )}
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground italic">
-                  Every call can become a chapter. Open the storybook to explore and add memories.
-                </p>
+                <div className="space-y-2 max-h-[140px] overflow-y-auto">
+                  <div className="rounded-xl bg-background/80 border border-border/50 p-3">
+                    <p className="text-xs font-medium text-foreground font-heading">Life&apos;s Simple Pleasures</p>
+                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">&ldquo;Mentioned enjoying time in the garden and checking on flowers. The tulips are starting to bloom early this year...&rdquo;</p>
+                  </div>
+                  <div className="rounded-xl bg-background/80 border border-border/50 p-3">
+                    <p className="text-xs font-medium text-foreground font-heading">Family Memories</p>
+                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">&ldquo;Talked about family and remembered a story from the old days, recalling summers at the cottage...&rdquo;</p>
+                  </div>
+                </div>
               )}
                   <div className="mt-4 flex items-center gap-2 text-primary text-sm font-medium">
                     <span>View storybook</span>
