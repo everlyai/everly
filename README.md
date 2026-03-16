@@ -161,6 +161,12 @@ Then set your production URL (e.g., `https://your-app.vercel.app/api/webhook/vap
 
 ---
 
+## Architecture
+
+For a concise, one-minute overview of how all the pieces fit together, see **[ARCHITECTURE.md](./ARCHITECTURE.md)**.
+
+---
+
 ## Project structure
 
 ```
